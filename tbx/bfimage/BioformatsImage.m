@@ -1,13 +1,11 @@
 classdef BioformatsImage
+    %BioformatsImage class
     
-    properties (AbortSet)   %Filename
+    properties (AbortSet)   %Filename and series number
         
         filename = '';
+        series = 1;
         
-    end
-    
-    properties  %Current series number
-        series
     end
     
     properties (Dependent)  %Image file attributes
@@ -33,6 +31,8 @@ classdef BioformatsImage
     
     properties (Access = private, Hidden)   %Bioformats toolbox URL
         bfTbxURL = 'http://downloads.openmicroscopy.org/bio-formats/5.4.0/artifacts/bfmatlab.zip';
+        
+        thisVersion = '0.9.0';
     end
     
     methods %Constructor, getters and setters
@@ -205,7 +205,7 @@ classdef BioformatsImage
 
     end
     
-    methods %Public functions
+    methods %Base functions
         
         function obj = getReader(obj)
             %Get a Bioformats Reader object
@@ -242,119 +242,55 @@ classdef BioformatsImage
             %
             %  ROI = [XMIN YMIN WIDTH HEIGHT];
             
+            ip = inputParser;
+            ip.addRequired('iZ',@(x) x > 0 && x <= obj.sizeZ);
+            ip.addRequired('iC',@(x) x > 0 && x <= obj.sizeC);
+            ip.addRequired('iT',@(x) x > 0 && x <= obj.sizeT);
+            ip.addOptional('iS', [], @(x) x > 0 && x <= obj.seriesCount);
+            ip.addParameter('ROI',[],@(x) numel(x) == 4 && all(x > 0));
+            
+            ip.parse(varargin{:});
+            
             %Check that reader object already exists
             if ~bfReaderExist(obj)
                 %Get a reader for the file
                 obj = obj.getReader;
             end
             
-            %Combine all inputs into a single vector
-            imgIndex = cell2mat(varargin);
-            
-            %Validate the inputs
-            if any(imgIndex <= 0)
-                error('BioformatsImage:getImage:IndexIsZeroOrLess',...
-                    'Values should be greater than 0.');
-            end
-            
-            getROI = false;
-            
-            switch numel(imgIndex)
-                
-                case 3
-                    %Input is [iZ, iC, iT]
-                    
-                    iZ = imgIndex(1);
-                    iC = imgIndex(2);
-                    iT = imgIndex(3);
-                    
-                    %Check if current series number is set. If not, default to
-                    %series 1.
-                    if isnan(obj.series)
-                        obj.series = 1;
-                    end
-                    
-                case 4
-                    %Input is [iS, iZ, iC, iT];
-                    
-                    iS = imgIndex(1);
-                    iZ = imgIndex(2);
-                    iC = imgIndex(3);
-                    iT = imgIndex(4);
-                    
-                    %Set series
-                    obj.series = imgIndex(iS);
-                    
-                case 7
-                    %Set ROI, no series change
-                    
-                    iZ = imgIndex(1);
-                    iC = imgIndex(2);
-                    iT = imgIndex(3);
-                    
-                    xMin = imgIndex(4);
-                    yMin = imgIndex(5);
-                    roiWidth = imgIndex(6);
-                    roiHeight = imgIndex(7);
-                    
-                    %Check if current series number is set. If not, default to
-                    %series 1.
-                    if isnan(obj.series)
-                        obj.series = 1;
-                    end
-                    
-                    getROI = true;
-                    
-                case 8
-                    
-                    iS = imgIndex(1);
-                    iZ = imgIndex(2);
-                    iC = imgIndex(3);
-                    iT = imgIndex(4);
-                    
-                    xMin = imgIndex(5);
-                    yMin = imgIndex(6);
-                    roiWidth = imgIndex(7);
-                    roiHeight = imgIndex(8);
-                    
-                    getROI = true;
-                    
-                    %Set series
-                    obj.series = imgIndex(iS);
-                    
-                otherwise                    
-                    
-                    error('BioformatsImage:getImage:InvalidArguments',...
-                        'Invalid number of input arguments. Expected [(iS), iZ, iC, iT, (ROI)] (values in parentheses are optional).')
-            end
+            if ~isempty(ip.Results.iS)
+                obj.series = ip.Results.iS;
+            end            
             
             %Get actual image index
-            bfIndex = obj.bfReader.getIndex(iZ - 1, iC - 1, iT -1) + 1;
-
+            bfIndex = obj.bfReader.getIndex(ip.Results.iZ - 1,...
+                ip.Results.iC - 1, ip.Results.iT -1) + 1;
+            
             %Get image
-            if getROI
+            if ~isempty(ip.Results.ROI)
+                xMin = ip.Results.ROI(1);
+                yMin = ip.Results.ROI(2);
+                roiWidth = ip.Results.ROI(3);
+                roiHeight = ip.Results.ROI(4);
                 imgOut = bfGetPlane(obj.bfReader,bfIndex,xMin,yMin,roiWidth,roiHeight);
             else
                 %Get full image
                 imgOut = bfGetPlane(obj.bfReader,bfIndex);
             end
             
-            if nargin > 1                
-                %Resolve the bioformats index
-                bfIndex = obj.bfReader.getIndex(0, iC - 1, iT - 1) + 1;
-                
+            if nargout > 1                
                 %Get the timestamp
                 timestamp = double(obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex).value);
             end
             
         end
         
-        function [imgOut, timestamp] = getXYplane(obj, channel, XYloc, frame)
+        function [imgOut, timestamp] = getXYplane(obj, channel, XYloc, frame, varargin)
             %GETXYPLANE  Get plane from multi-XY images
             %
             %  I = O.GETXYPLANE(Channel, Location, Frame)
             %
             %  Assumes that Z = 1.
+            % This is to handle the interleaving
             
             %Check that reader object already exists
             if ~bfReaderExist(obj)
@@ -375,8 +311,12 @@ classdef BioformatsImage
             
             %Get the image plane
             obj.series = iS;
-            imgOut = obj.getPlane([1, iC, iT]);
             
+            %Get the image (passing in the varargin, assumed to be ROI
+            %information)
+            imgOut = obj.getPlane(1, iC, iT, varargin);
+            
+            %Get timestamp if output is assigned            
             if nargout > 1
                 %Resolve the bioformats index
                 bfIndex = obj.bfReader.getIndex(0, iC - 1, iT - 1) + 1;
@@ -401,13 +341,36 @@ classdef BioformatsImage
             end
         end
         
-        function imgOut = getZstack(obj, channel, timepoint)
+        function versionOut = version(obj)
+            
+            versionOut = sprintf('BioformatsImage class Version %s',obj.thisVersion);
+            
+        end
+        
+    end
+
+    methods %Stack functions
+        
+        function imgOut = getZstack(obj, channel, timepoint, varargin)
             %Gets a z-stack for the specified channel and timepoint
             %
             %  I = O.GETZSTACK(Channel, Timepoint)
             %
             %  If Timepoint is not set, it defaults to 1.
             
+            ip = inputParser;
+            ip.addRequired('iC',@(x) isscalar(x) || ischar(x));
+            ip.addOptional('iT', 1, @(x) x > 0 && x <= obj.sizeT);
+            ip.addParameter('ROI',[],@(x) numel(x) == 4 && all(x > 0));
+            ip.addParameter('ZRange',1:obj.sizeZ,@(x) min(x) > 0 && max(x) <= obj.sizeZ);
+            
+            ip.parse(channel, timepoint, varargin{:});
+            
+            %Get the results of the parser
+            zRange = ip.Results.ZRange;
+            roi = ip.Results.ROI;
+            iT = ip.Results.iT;
+            
             %Check that reader object already exists
             if ~bfReaderExist(obj)
                 %Get a reader for the file
@@ -417,27 +380,33 @@ classdef BioformatsImage
             %Convert channel name to index (if it is already an index, the
             %function will just return the same number)
             iC = obj.channelname2ind(channel);
-            
-            if ~exist('timepoint','var')
-                iT = 1;
+           
+            %Initialize a storage matrix
+            if ~isempty(ip.Results.ROI)
+                imgOut = zeros(roi(4),roi(3),numel(zRange),'uint16');
             else
-                if timepoint <= 0 || timepoint > obj.sizeT
-                    error('BioformatsImage:getZstack:InvalidTimepoint',...
-                        'Timepoint must be >0 and <= %d.',obj.sizeT);
-                end
-                iT = timepoint;
+                imgOut = zeros(obj.height,obj.width,(zRange),'uint16');
             end
             
-            imgOut = zeros(obj.height,obj.width,obj.sizeZ,'uint16');
-            for iZ = 1:obj.sizeZ
-                imgOut(:,:,iZ) = obj.getPlane([iZ, iC, iT]);                
+            for iZ = zRange
+                if ~isempty(ip.Results.ROI)                
+                    imgOut(:,:,iZ) = obj.getPlane(iZ, iC, iT, 'ROI', roi);                
+                else
+                    imgOut(:,:,iZ) = obj.getPlane(iZ, iC, iT);                
+                end
             end
             
         end
         
-        function imgOut = getChannel(obj, channel, zplane)
+        function imgOut = getChannel(obj, channel, varargin)
             %Gets all timepoints from the specified channel (and z-plane)
+            ip = inputParser;
+            ip.addRequired('Channel',@(x) isscalar(x) || ischar(x));
+            ip.addOptional('iZ', 1, @(x) x > 0 && x <= obj.sizeZ);
+            ip.addParameter('ROI',[],@(x) numel(x) == 4 && all(x > 0));
             
+            ip.parse(channel, varargin{:});
+                        
             %Check that reader object already exists
             if ~bfReaderExist(obj)
                 %Get a reader for the file
@@ -446,100 +415,86 @@ classdef BioformatsImage
             
             %Convert channel name to index (if it is already an index, the
             %function will just return the same number)
-            iC = obj.channelname2ind(channel);
+            iC = obj.channelname2ind(ip.Results.Channel);
             
-            if ~exist('zplane','var')
-                iZ = 1;
+            roi = ip.Results.ROI;
+            
+            %Initialize a storage matrix
+            if ~isempty(ip.Results.ROI)
+                imgOut = zeros(roi(4),roi(3),obj.sizeT,'uint16');
             else
-                if zplane <= 0 || zplane > obj.sizeZ
-                    error('BioformatsImage:getTstack:InvalidZplane',...
-                        'Z-plane index must be > 0 and <= %d.',obj.sizeZ);
-                end
-                
-                iZ = zplane;
+                imgOut = zeros(obj.height,obj.width,obj.sizeT,'uint16');
             end
             
-            imgOut = zeros(obj.height,obj.width,obj.sizeT,'uint16');
             for iT = 1:obj.sizeT
-                imgOut(:,:,iT) = obj.getPlane([iZ, iC, iT]);
+                if ~isempty(ip.Results.ROI)
+                    imgOut(:,:,iT) = obj.getPlane(ip.Results.iZ, iC, iT, 'ROI', roi);
+                else
+                    imgOut(:,:,iT) = obj.getPlane(ip.Results.iZ, iC, iT);
+                end
             end
             
         end
         
-        function imgOut = getFrame(obj, timepoint, zplane)
+        function imgOut = getTimepoint(obj, timepoint, varargin)
             %Get all channels from a specific timepoint (and z-plane)
             
+            ip = inputParser;
+            ip.addRequired('iT',@(x) x > 0 && x <= obj.sizeT);
+            ip.addOptional('iZ', 1, @(x) x > 0 && x <= obj.sizeZ);
+            ip.addParameter('ROI',[],@(x) numel(x) == 4 && all(x > 0));
+            
+            ip.parse(timepoint, varargin{:});
+            
             %Check that reader object already exists
             if ~bfReaderExist(obj)
                 %Get a reader for the file
                 obj = obj.getReader;
             end
-            
-            %Validate the timepoint
-            if timepoint <= 0 || timepoint > obj.sizeT
-                error('BioformatsImage:getZstack:InvalidTimepoint',...
-                    'Timepoint must be >0 and <= %d.',obj.sizeT);
-            end
-            iT = timepoint;
-
-            %Validate the zplane
-            if ~exist('zplane','var')
-                iZ = 1;
+                        
+            %Initialize a storage matrix
+            roi = ip.Results.ROI;
+          
+            if ~isempty(ip.Results.ROI)
+                imgOut = zeros(roi(4),roi(3),obj.sizeC,'uint16');
             else
-                if zplane <= 0 || zplane > obj.sizeZ
-                    error('BioformatsImage:getTstack:InvalidZplane',...
-                        'Z-plane index must be > 0 and <= %d.',obj.sizeZ);
-                end
-                
-                iZ = zplane;
+                imgOut = zeros(obj.height,obj.width,obj.sizeC,'uint16');
             end
             
-            imgOut = zeros(obj.height,obj.width,obj.sizeC,'uint16');
             for iC = 1:obj.sizeC
-                imgOut(:,:,iC) = obj.getPlane([iZ, iC, iT]);
+                if  ~isempty(ip.Results.ROI)
+                    imgOut(:,:,iC) = obj.getPlane(ip.Results.iZ, iC, ip.Results.iT, 'ROI', roi);
+                else
+                    imgOut(:,:,iC) = obj.getPlane(ip.Results.iZ, iC, ip.Results.iT);
+                end
             end
         end
         
-        function MAPout = getZmap(obj,channel, timepoint, varargin)
+        function MAPout = getZmap(obj,channel, varargin)
             %Get maximum amplitude projection of an image along the z-plane
             %
             % Default is 'maximum'
             %
             % Could also be 'mean' or 'median'
             
+            mapIP = inputParser;
+            mapIP.addRequired('channel',@(x) isnumeric(x) || ischar(x));
+            mapIP.addOptional('iT',1, @(x) isscalar(x) && x > 0 && x <= obj.sizeT);
+            mapIP.addParameter('binMode','max',@(x) ischar(x));
+            mapIP.addParameter('ROI',[1 1 obj.width obj.height],@(x) numel(x) == 4);
+            mapIP.addParameter('ZRange',1:obj.sizeZ,@(x) min(x) > 0 && max(x) <= obj.sizeZ);
+            
+            mapIP.parse(channel, varargin{:});
+            
             %Check that reader object already exists
             if ~bfReaderExist(obj)
                 %Get a reader for the file
                 obj = obj.getReader;
             end
             
-            %Validate the timepoint input
-            if exist('timepoint','var') && ~ischar(timepoint)
-                if timepoint > 0 && timepoint <= obj.sizeT
-                    iT = timepoint;
-                else
-                    error('BioformatsImage:getZmap:InvalidTimepoint',...
-                        'Timepoint must be >0 and <= %d.',obj.sizeT);
-                end
-            else
-               iT = 1;
-            end
+            zStack = obj.getZstack(mapIP.Results.channel, mapIP.Results.iT, 'ROI', mapIP.Results.ROI,'zRange',mapIP.Results.ZRange);
             
-            %Set the operating mode
-            if ischar(timepoint)
-                %If the mode was specified instead of a timepoint
-                mode = timepoint; 
-            elseif ~isempty(varargin)
-                %If the mode was specified at the end
-                mode = varargin{1};
-            else
-                %Default mode is maximum
-                mode = 'max';
-            end               
-            
-            zStack = obj.getZstack(channel, iT);
-            
-            switch lower(mode)
+            switch lower(mapIP.Results.binMode)
             
                 case {'max', 'maximum'}
                     MAPout = max(zStack,[],3);
@@ -558,6 +513,94 @@ classdef BioformatsImage
                         'Mode should be either ''max'', ''mean'', or ''median''');
                     
             end
+            
+        end
+        
+    end
+    
+    methods  %Tiling functions
+        
+        function tileDataOut = getTile(obj, zcts, numTiles, tileIndex)
+            
+            %Parse the first input
+            ip = inputParser;
+            ip.addOptional('iZ',1)
+            ip.addRequired('iC')
+            ip.addOptional('iT',1);
+            ip.addOptional('iS',obj.series);
+            
+            ip.addRequired('NumTiles',@(x) numel(x) == 2 && all(x > 0));
+            ip.addRequired('TileRange', @(x) all(x > 0));
+            
+            ip.parse(zcts(:),numTiles,tileIndex);
+            
+            %Check that the tile range fits within the total number of
+            %tiles
+            if any(ip.Results.TileRange > prod(ip.Results.NumTiles))
+                error('BioformatsImage:IndexExceedsTileDimensions',...
+                    'Index exceeds tile dimensions. Maximum index is %d.',...
+                    prod(ip.Results.NumTiles))
+            end
+            
+            %Create a storage cell (for multiple tile data, which might have different sizes)
+            tileDataOut = cell(numel(ip.Results.TileRange),1);
+            for iT = 1:numel(ip.Results.TileRange)
+                tileIndex = ip.Results.TileRange(iT);
+                roi = getTileIndices(obj, ip.Results.NumTiles, tileIndex);
+                
+                %Get the ROI
+                tileDataOut{iT} = obj.getPlane(ip.Results.iC,...
+                    ip.Results.iZ, ip.Results.iT, 'ROI', roi);
+            end
+            
+            %If it's only a single tile, output a matrix rather than a cell
+            if numel(tileDataOut) == 1
+                tileDataOut = tileDataOut{:};
+            end
+                
+        end
+        
+        function tileZstackOut = getTileZstack(obj, zcts, numTiles, tileIndex, mode)
+            
+            %!!!TODO
+            %Parse the first input
+            ip = inputParser;
+            ip.addOptional('iZ',1)
+            ip.addRequired('iC')
+            ip.addOptional('iT',1);
+            ip.addOptional('iS',obj.series);
+            
+            ip.addRequired('NumTiles',@(x) numel(x) == 2 && all(x > 0));
+            ip.addRequired('TileRange', @(x) all(x > 0));
+            
+            %Resolve the roi
+            roi = obj.getTileIndices(numTiles, tileIndex);
+            
+            %Initialize the storage matrix
+            tileZstack = zeros(roi(4),roi(3),obj.sizeZ,'uint16');
+            
+            for iZ = 1:obj.sizeZ
+                tileZstack(:,:,iZ) = obj.getPlane(iZ, channel, 1, roi);
+            end
+            
+            switch lower(mode)
+                
+                case {'max', 'maximum'}
+                    tileZstackOut = max(tileZstack,[],3);
+                    
+                case {'mean','average','avg'}
+                    tileZstackOut = mean(tileZstack,3);
+                    
+                case 'median'
+                    tileZstackOut = median(tileZstack,3);
+                    
+                case {'min', 'minimum'}
+                    tileZstackOut = min(tileZstack,[],3);
+                    
+                otherwise
+                    error('BioformatsImage:getTileZstack:UnknownMode',...
+                        'Mode should be either ''max'', ''mean'', or ''median''');
+            end            
             
         end
         
@@ -586,7 +629,7 @@ classdef BioformatsImage
         
     end
     
-    methods (Hidden, Access = private)    %Installing toolbox
+    methods (Access = private)
         
         function installBFtbx(obj)
             %Downloads and installs the Bioformats Toolbox
@@ -649,20 +692,61 @@ classdef BioformatsImage
             
         end
         
+        function roiOut = getTileIndices(obj, numTiles, tileIndex)
+            %Given a tile size and index, calculate the resulting ROI
+            %vector
+            %ROI = [XMIN YMIN WIDTH HEIGHT];
+            
+            if numel(tileIndex) == 1
+                %If it's a single index, resolve it into row,col
+                %coordinates
+                [indRow, indCol] = ind2sub(numTiles,tileIndex);
+            else
+                indRow = tileIndex(1);
+                indCol = tileIndex(2);
+            end
+            
+            %Calculate the tile height/width start and end indices
+            %
+            % Tile indices are:
+            %     start floor(height/numrows) * (tile row number - 1) + 1
+            %     end floor(height/numrows) * (tile row number)
+            
+            %Row:
+            tileHeight = floor(obj.height/numTiles(1));
+            
+            rowStart = tileHeight * (indRow - 1) + 1;
+            
+            if indRow ~= numTiles(1)
+                rowEnd = tileHeight * indRow;
+            else
+                %If it's the last row, then just use the image height
+                rowEnd = obj.height;
+            end
+            
+            %Convert to ROI height
+            roiHeight = rowEnd - rowStart + 1;
+            
+            %Col:
+            tileWidth = floor(obj.width/numTiles(2));
+            
+            colStart = tileWidth * (indCol - 1) + 1;
+            
+            if indCol ~= numTiles(2)
+                colEnd = tileWidth * indCol;
+            else
+                %If it's the last row, then just use the image height
+                colEnd = obj.height;
+            end
+            
+            %Convert to ROI width
+            roiWidth = colEnd - colStart + 1;
+            
+            roiOut = [colStart, rowStart, roiWidth, roiHeight];
+        
+        end
     end
         
 end
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+%TODO: Tidy up ROI functions

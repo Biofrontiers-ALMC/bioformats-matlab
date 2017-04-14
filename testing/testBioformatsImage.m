@@ -25,11 +25,10 @@ classdef testBioformatsImage < matlab.unittest.TestCase
             TestCase.verifyClass(to,'BioformatsImage');
             
             try
-                to.filename = 'test.nd2';
+                to.filename = 'noSuchFILENAME_anfi29nsi3.nd2';
             catch ME
                                 
             end
-            
             TestCase.verifyEqual(ME.identifier,'BioformatsImage:CannotFindFile');
             
         end
@@ -43,5 +42,19 @@ classdef testBioformatsImage < matlab.unittest.TestCase
             TestCase.verifyEqual(to.filename, which(TestCase.testfile))
             
         end
+        
+        function testGetPlane(TestCase)
+            
+            to = BioformatsImage(TestCase.testfile);
+            
+            imgBFI = to.getPlane([1 1 1]);
+            
+            nd2r = bfGetReader(TestCase.testfile);
+            
+            imgND2r = bfGetPlane(nd2r,nd2r.getIndex(0,0,0) + 1);
+            
+            TestCase.verifyEqual(imgBFI, imgND2r);
+        end
+        
     end
 end
