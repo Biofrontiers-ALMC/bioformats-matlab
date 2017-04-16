@@ -520,7 +520,7 @@ classdef BioformatsImage
     
     methods  %Tiling functions
         
-        function tileDataOut = getTile(obj, zcts, numTiles, tileIndex)
+        function [tileDataOut roiOut] = getTile(obj, zcts, numTiles, tileIndex)
             
             %Parse the first input
             ip = inputParser;
@@ -544,6 +544,10 @@ classdef BioformatsImage
             
             %Create a storage cell (for multiple tile data, which might have different sizes)
             tileDataOut = cell(numel(ip.Results.TileRange),1);
+            
+            %Create a storage for the roi
+            roiOut = zeros(numel(ip.Results.TileRange),4);
+            
             for iT = 1:numel(ip.Results.TileRange)
                 tileIndex = ip.Results.TileRange(iT);
                 roi = getTileIndices(obj, ip.Results.NumTiles, tileIndex);
@@ -551,6 +555,8 @@ classdef BioformatsImage
                 %Get the ROI
                 tileDataOut{iT} = obj.getPlane(ip.Results.iC,...
                     ip.Results.iZ, ip.Results.iT, 'ROI', roi);
+                
+                roiOut(iT,:) = roiOut;
             end
             
             %If it's only a single tile, output a matrix rather than a cell
@@ -560,48 +566,40 @@ classdef BioformatsImage
                 
         end
         
-        function tileZstackOut = getTileZstack(obj, zcts, numTiles, tileIndex, mode)
+        function zMAPsOut = getTileZMap(obj, ct, numTiles, tileIndex, varargin)
             
-            %!!!TODO
-            %Parse the first input
             ip = inputParser;
-            ip.addOptional('iZ',1)
             ip.addRequired('iC')
             ip.addOptional('iT',1);
-            ip.addOptional('iS',obj.series);
+%             ip.addOptional('iS',obj.series);
             
             ip.addRequired('NumTiles',@(x) numel(x) == 2 && all(x > 0));
             ip.addRequired('TileRange', @(x) all(x > 0));
+
+            ip.addParameter('binMode','max',@(x) ischar(x));
+            ip.addParameter('ZRange',1:obj.sizeZ,@(x) min(x) > 0 && max(x) <= obj.sizeZ);
             
-            %Resolve the roi
-            roi = obj.getTileIndices(numTiles, tileIndex);
+            ip.parse(ct,numTiles,tileIndex,varargin{:});
             
-            %Initialize the storage matrix
-            tileZstack = zeros(roi(4),roi(3),obj.sizeZ,'uint16');
+            tileRange = ip.Results.TileRange;
             
-            for iZ = 1:obj.sizeZ
-                tileZstack(:,:,iZ) = obj.getPlane(iZ, channel, 1, roi);
+            zMAPsOut = cell(numel(tileRange,1));
+            for iT = 1:numel(tileRange)
+                currTileIdx = tileRange(iT);
+                
+                %Resolve the roi
+                roi = obj.getTileIndices(ip.Results.NumTiles, currTileIdx);
+                
+                %Get the z-stack MAP
+                zMAPsOut{iT} = obj.getZmap(ip.Results.iC, ip.Results.iT, 'roi', roi,...
+                        'binMode', ip.Results.binMode, 'ZRange', ip.Results.ZRange);
+                
             end
             
-            switch lower(mode)
-                
-                case {'max', 'maximum'}
-                    tileZstackOut = max(tileZstack,[],3);
-                    
-                case {'mean','average','avg'}
-                    tileZstackOut = mean(tileZstack,3);
-                    
-                case 'median'
-                    tileZstackOut = median(tileZstack,3);
-                    
-                case {'min', 'minimum'}
-                    tileZstackOut = min(tileZstack,[],3);
-                    
-                otherwise
-                    error('BioformatsImage:getTileZstack:UnknownMode',...
-                        'Mode should be either ''max'', ''mean'', or ''median''');
-            end            
-            
+            if numel(zMAPsOut) == 1
+                zMAPsOut = zMAPsOut{:};
+            end
+               
         end
         
     end
