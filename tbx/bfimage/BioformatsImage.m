@@ -1,11 +1,17 @@
 classdef BioformatsImage
-    %BioformatsImage class
+    % BIOFORMATSIMAGE  Class to read microscope images
+    %   The Bioformats toolbox is a standalone Java library for reading and
+    %   writing life sciences image formats. This class is designed to
+    %   extend the MATLAB version of the toolbox with API-like
+    %   functionality to make it easier to use.
+    %
+    %   This class will also download and install the files required.
+    %
+    %   I = BIOFORMATSIMAGE(filename)
     
     properties (AbortSet)   %Filename and series number
-        
         filename = '';
         series = 1;
-        
     end
     
     properties (Dependent)  %Image file attributes
@@ -14,9 +20,9 @@ classdef BioformatsImage
         
         seriesCount
         
-        sizeZ
-        sizeC
-        sizeT
+        sizeZ   %Number of z-planes
+        sizeC   %Number of channels
+        sizeT   %Number of timepoints
         
         channelNames
         
@@ -25,20 +31,20 @@ classdef BioformatsImage
     end
     
     properties (Transient, Hidden, SetAccess = private)
-        bfReader
+        bfReader    %This property is used to store the bioformats reader
         metadata
     end
     
-    properties (Access = private, Hidden)   %Bioformats toolbox URL
+    properties (Access = private)   %Bioformats toolbox URL
         bfTbxURL = 'http://downloads.openmicroscopy.org/bio-formats/5.4.0/artifacts/bfmatlab.zip';
-        
         thisVersion = '0.9.0';
     end
     
     methods %Constructor, getters and setters
         
         function obj = BioformatsImage(varargin)
-            %Class constructor
+            % Create a new class object
+            %   To create a new object, call I = BIOFORMATSIMAGE(filename)
             
             if nargin > 0
                 obj.filename = varargin{1};
@@ -520,7 +526,7 @@ classdef BioformatsImage
     
     methods  %Tiling functions
         
-        function [tileDataOut roiOut] = getTile(obj, zcts, numTiles, tileIndex)
+        function [tileDataOut, roiOut] = getTile(obj, zcts, numTiles, tileIndex)
             
             %Parse the first input
             ip = inputParser;
@@ -746,5 +752,3 @@ classdef BioformatsImage
     end
         
 end
-
-%TODO: Tidy up ROI functions

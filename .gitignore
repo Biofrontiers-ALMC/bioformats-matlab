@@ -8,3 +8,5 @@ tbx/bfimage/*
 #Ignore everything in the local folder except the dummy file (needed to get Git to keep the empty folder)
 local/*
 !local/.dummy
+
+*.mltbx

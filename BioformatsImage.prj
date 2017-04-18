@@ -21,10 +21,7 @@ Note: It is no longer necessary to download the Bio-Formats MATLAB toolbox manua
     <param.demosxml />
     <param.apps />
     <param.docs />
-    <param.matlabpath.excludes>
-      <item>/bfimage/bfmatlab</item>
-      <item>/bfimage</item>
-    </param.matlabpath.excludes>
+    <param.matlabpath.excludes />
     <param.javaclasspath.excludes>
       <item>/bfimage/bfmatlab/bioformats_package.jar</item>
     </param.javaclasspath.excludes>
@@ -43,6 +40,7 @@ Note: It is no longer necessary to download the Bio-Formats MATLAB toolbox manua
       <param.demosxml />
       <param.apps />
       <param.docs />
+      <param.matlabpath.excludes />
     </unset>
     <fileset.rootdir>
       <file>${PROJECT_ROOT}\tbx</file>
