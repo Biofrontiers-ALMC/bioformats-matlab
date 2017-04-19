@@ -194,18 +194,7 @@ classdef BioformatsImage
             
             pxInfoStr = char(obj.metadata.getPixelsPhysicalSizeX(0).toString);
             
-            %Find the 'unit[' pattern
-            unitStartIdx = strfind(pxInfoStr,'unit[');
-            %Offset by 5 characters to get start of unit string
-            unitStartIdx = unitStartIdx + 5;    
-            
-            %Find the closing brace, starting from the unit string
-            unitEndIdx = strfind(pxInfoStr(unitStartIdx:end),']');
-            %Reduce by 1 character to not include the closing brace
-            unitEndIdx = unitEndIdx - 2;
-            
-            %Output the pixel unit
-            pxUnit = pxInfoStr(unitStartIdx: unitStartIdx + unitEndIdx);
+            pxUnit = BioformatsImage.getUnitString(pxInfoStr);
             
         end
 
@@ -332,7 +321,7 @@ classdef BioformatsImage
             end
         end
         
-        function timestamps = getTimestamps(obj,channel)
+        function [timestamps, tsunits] = getTimestamps(obj,channel)
             
             iC = obj.channelname2ind(channel);
             
@@ -343,8 +332,12 @@ classdef BioformatsImage
                 bfIndex = obj.bfReader.getIndex(0, iC - 1, iT - 1) + 1;
       
                 timestamps(iT) = double(obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex).value);
-                
             end
+            
+            %Get the unit string
+            tsStr = char(obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex).toString);
+            tsunits = BioformatsImage.getUnitString(tsStr);
+            
         end
         
         function versionOut = version(obj)
@@ -631,6 +624,24 @@ classdef BioformatsImage
             
         end
         
+        function unitStr = getUnitString(strIn)
+            %Parses an input string for the unit
+            
+            %Find the 'unit[' pattern
+            unitStartIdx = strfind(strIn,'unit[');
+            %Offset by 5 characters to get start of unit string
+            unitStartIdx = unitStartIdx + 5;
+            
+            %Find the closing brace, starting from the unit string
+            unitEndIdx = strfind(strIn(unitStartIdx:end),']');
+            %Reduce by 1 character to not include the closing brace
+            unitEndIdx = unitEndIdx - 2;
+            
+            %Output the pixel unit
+            unitStr = strIn(unitStartIdx: unitStartIdx + unitEndIdx);
+            
+        end        
+        
     end
     
     methods (Access = private)
@@ -749,6 +760,7 @@ classdef BioformatsImage
             roiOut = [colStart, rowStart, roiWidth, roiHeight];
         
         end
+
     end
         
 end
