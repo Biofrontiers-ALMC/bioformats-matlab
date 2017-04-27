@@ -5,9 +5,22 @@ classdef BioformatsImage
     %   extend the MATLAB version of the toolbox with API-like
     %   functionality to make it easier to use.
     %
-    %   This class will also download and install the files required.
+    %   R = BIOFORMATSIMAGE(filename) creates a new BioformatsImage object
+    %   R which is linked to the filename specified. 
     %
-    %   I = BIOFORMATSIMAGE(filename)
+    %   To get an image:
+    %    I = R.getPlane(iZ, iC, iT,   
+    %
+    %
+    %
+    %
+    %   NOTE: This class requires the use of the Bioformats toolbox*.
+    %   Whenever an object is created, it will check if the toolbox exists.
+    %   If it does not, it will download and install a compatible version
+    %   (currently 5.4.0) to the MATLAB path.
+    %   
+    %   *The Bioformats MATLAB toolbox is developed by the Open Microscopy
+    %   Environment team (http://http://www.openmicroscopy.org).
     
     properties (AbortSet)   %Filename and series number
         filename = '';
@@ -231,9 +244,9 @@ classdef BioformatsImage
             %
             %  imgOut = getImage(iZ, iC, iT)
             %
-            %  imgOut = getImage(iS, iZ, iC, iT);
+            %  imgOut = getImage(iZ, iC, iT, iS);
             %
-            %  imgOut = getImage(iS, iZ, iC, iT, ROI);
+            %  imgOut = getImage(iZ, iC, iT, iS, ROI);
             %
             %  ROI = [XMIN YMIN WIDTH HEIGHT];
             
