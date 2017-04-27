@@ -555,7 +555,7 @@ classdef BioformatsImage
                 tileDataOut{iT} = obj.getPlane(ip.Results.iC,...
                     ip.Results.iZ, ip.Results.iT, 'ROI', roi);
                 
-                roiOut(iT,:) = roiOut;
+                roiOut(iT,:) = roi;
             end
             
             %If it's only a single tile, output a matrix rather than a cell
@@ -565,7 +565,7 @@ classdef BioformatsImage
                 
         end
         
-        function zMAPsOut = getTileZMap(obj, ct, numTiles, tileIndex, varargin)
+        function [zMAPsOut, roiOut] = getTileZMap(obj, ct, numTiles, tileIndex, varargin)
             
             ip = inputParser;
             ip.addRequired('iC')
@@ -583,6 +583,10 @@ classdef BioformatsImage
             tileRange = ip.Results.TileRange;
             
             zMAPsOut = cell(numel(tileRange,1));
+            
+            %Create a storage for the roi
+            roiOut = zeros(numel(ip.Results.TileRange),4);
+            
             for iT = 1:numel(tileRange)
                 currTileIdx = tileRange(iT);
                 
@@ -593,6 +597,7 @@ classdef BioformatsImage
                 zMAPsOut{iT} = obj.getZmap(ip.Results.iC, ip.Results.iT, 'roi', roi,...
                         'binMode', ip.Results.binMode, 'ZRange', ip.Results.ZRange);
                 
+                roiOut(iT,:) = roi;                    
             end
             
             if numel(zMAPsOut) == 1
@@ -641,6 +646,64 @@ classdef BioformatsImage
             unitStr = strIn(unitStartIdx: unitStartIdx + unitEndIdx);
             
         end        
+        
+    end
+    
+    methods (Hidden)
+        
+        function roiOut = getTileIndices(obj, numTiles, tileIndex)
+            %Given a tile size and index, calculate the resulting ROI
+            %vector
+            %ROI = [XMIN YMIN WIDTH HEIGHT];
+            
+            if numel(tileIndex) == 1
+                %If it's a single index, resolve it into row,col
+                %coordinates
+                [indRow, indCol] = ind2sub(numTiles,tileIndex);
+            else
+                indRow = tileIndex(1);
+                indCol = tileIndex(2);
+            end
+            
+            %Calculate the tile height/width start and end indices
+            %
+            % Tile indices are:
+            %     start floor(height/numrows) * (tile row number - 1) + 1
+            %     end floor(height/numrows) * (tile row number)
+            
+            %Row:
+            tileHeight = floor(obj.height/numTiles(1));
+            
+            rowStart = tileHeight * (indRow - 1) + 1;
+            
+            if indRow ~= numTiles(1)
+                rowEnd = tileHeight * indRow;
+            else
+                %If it's the last row, then just use the image height
+                rowEnd = obj.height;
+            end
+            
+            %Convert to ROI height
+            roiHeight = rowEnd - rowStart + 1;
+            
+            %Col:
+            tileWidth = floor(obj.width/numTiles(2));
+            
+            colStart = tileWidth * (indCol - 1) + 1;
+            
+            if indCol ~= numTiles(2)
+                colEnd = tileWidth * indCol;
+            else
+                %If it's the last row, then just use the image height
+                colEnd = obj.width;
+            end
+            
+            %Convert to ROI width
+            roiWidth = colEnd - colStart + 1;
+            
+            roiOut = [colStart, rowStart, roiWidth, roiHeight];
+        
+        end
         
     end
     
@@ -707,59 +770,7 @@ classdef BioformatsImage
             
         end
         
-        function roiOut = getTileIndices(obj, numTiles, tileIndex)
-            %Given a tile size and index, calculate the resulting ROI
-            %vector
-            %ROI = [XMIN YMIN WIDTH HEIGHT];
-            
-            if numel(tileIndex) == 1
-                %If it's a single index, resolve it into row,col
-                %coordinates
-                [indRow, indCol] = ind2sub(numTiles,tileIndex);
-            else
-                indRow = tileIndex(1);
-                indCol = tileIndex(2);
-            end
-            
-            %Calculate the tile height/width start and end indices
-            %
-            % Tile indices are:
-            %     start floor(height/numrows) * (tile row number - 1) + 1
-            %     end floor(height/numrows) * (tile row number)
-            
-            %Row:
-            tileHeight = floor(obj.height/numTiles(1));
-            
-            rowStart = tileHeight * (indRow - 1) + 1;
-            
-            if indRow ~= numTiles(1)
-                rowEnd = tileHeight * indRow;
-            else
-                %If it's the last row, then just use the image height
-                rowEnd = obj.height;
-            end
-            
-            %Convert to ROI height
-            roiHeight = rowEnd - rowStart + 1;
-            
-            %Col:
-            tileWidth = floor(obj.width/numTiles(2));
-            
-            colStart = tileWidth * (indCol - 1) + 1;
-            
-            if indCol ~= numTiles(2)
-                colEnd = tileWidth * indCol;
-            else
-                %If it's the last row, then just use the image height
-                colEnd = obj.height;
-            end
-            
-            %Convert to ROI width
-            roiWidth = colEnd - colStart + 1;
-            
-            roiOut = [colStart, rowStart, roiWidth, roiHeight];
         
-        end
 
     end
         
