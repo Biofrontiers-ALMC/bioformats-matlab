@@ -239,7 +239,7 @@ classdef BioformatsImage
             
         end
         
-        function [imgOut, timestamp] = getPlane(obj,varargin)
+        function [imgOut, timestamp] = getPlane(obj,planeSpec,varargin)
             %Get image at specified index
             %
             %  imgOut = getImage(iZ, iC, iT)
@@ -255,9 +255,12 @@ classdef BioformatsImage
             ip.addRequired('iC',@(x) x > 0 && x <= obj.sizeC);
             ip.addRequired('iT',@(x) x > 0 && x <= obj.sizeT);
             ip.addOptional('iS', [], @(x) x > 0 && x <= obj.seriesCount);
+            
             ip.addParameter('ROI',[],@(x) numel(x) == 4 && all(x > 0));
             
-            ip.parse(varargin{:});
+            planeSpec = num2cell(planeSpec);
+            
+            ip.parse(planeSpec{:},varargin{:});
             
             %Check that reader object already exists
             if ~bfReaderExist(obj)
@@ -271,7 +274,7 @@ classdef BioformatsImage
             
             %Get actual image index
             bfIndex = obj.bfReader.getIndex(ip.Results.iZ - 1,...
-                ip.Results.iC - 1, ip.Results.iT -1) + 1;
+                ip.Results.iC - 1, ip.Results.iT - 1) + 1;
             
             %Get image
             if ~isempty(ip.Results.ROI)
@@ -532,19 +535,19 @@ classdef BioformatsImage
     
     methods  %Tiling functions
         
-        function [tileDataOut, roiOut] = getTile(obj, zcts, numTiles, tileIndex)
+        function [tileDataOut, roiOut] = getTile(obj, planeSpec, numTiles, tileIndex)
             
             %Parse the first input
             ip = inputParser;
-            ip.addOptional('iZ',1)
-            ip.addRequired('iC')
-            ip.addOptional('iT',1);
-            ip.addOptional('iS',obj.series);
+%             ip.addOptional('iZ',1,@(x) isscalar(x))
+%             ip.addRequired('iC',@(x) isscalar(x))
+%             ip.addOptional('iT',1,@(x) isscalar(x));
+%             ip.addOptional('iS',obj.series,@(x) isscalar(x));
             
             ip.addRequired('NumTiles',@(x) numel(x) == 2 && all(x > 0));
             ip.addRequired('TileRange', @(x) all(x > 0));
-            
-            ip.parse(zcts(:),numTiles,tileIndex);
+                        
+            ip.parse(numTiles,tileIndex);
             
             %Check that the tile range fits within the total number of
             %tiles
@@ -565,8 +568,7 @@ classdef BioformatsImage
                 roi = getTileIndices(obj, ip.Results.NumTiles, tileIndex);
                 
                 %Get the ROI
-                tileDataOut{iT} = obj.getPlane(ip.Results.iC,...
-                    ip.Results.iZ, ip.Results.iT, 'ROI', roi);
+                tileDataOut{iT} = obj.getPlane(planeSpec, 'ROI', roi);
                 
                 roiOut(iT,:) = roi;
             end
@@ -659,6 +661,14 @@ classdef BioformatsImage
             unitStr = strIn(unitStartIdx: unitStartIdx + unitEndIdx);
             
         end        
+        
+        function [iZ, iC, iT, iS] = parseZCTS(vecIn, varargin)
+            
+            ip = inputParser;
+            ip.addParameter('RequiredParam','c',@(x) ismember(lower(x),{'z','c','t','s'}));
+            ip.parse(varargin{:})
+            
+        end
         
     end
     
@@ -783,8 +793,6 @@ classdef BioformatsImage
             
         end
         
-        
-
     end
         
 end

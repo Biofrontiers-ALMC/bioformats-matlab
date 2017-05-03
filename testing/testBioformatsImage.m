@@ -2,7 +2,7 @@ classdef testBioformatsImage < matlab.unittest.TestCase
     
     properties
         
-        testfile = '3-29-17_(640nm-8percent)_Cy5-20-1frame_GFP-8-100ms.nd2';
+        testfile = 'test.nd2';
         
     end
     
@@ -45,15 +45,35 @@ classdef testBioformatsImage < matlab.unittest.TestCase
         
         function testGetPlane(TestCase)
             
-            to = BioformatsImage(TestCase.testfile);
+            BIobj = BioformatsImage(TestCase.testfile);
             
-            imgBFI = to.getPlane([1 1 1]);
+            imgBFI = BIobj.getPlane([1 1 1]);
             
             nd2r = bfGetReader(TestCase.testfile);
             
             imgND2r = bfGetPlane(nd2r,nd2r.getIndex(0,0,0) + 1);
             
             TestCase.verifyEqual(imgBFI, imgND2r);
+        end
+        
+        function testGetTile(TestCase)
+            
+            %[Z C T]
+            iZ = 1;
+            iC = 1;
+            iT = 10;
+            
+            BIobj = BioformatsImage(TestCase.testfile);
+            
+            [tileImg, tileROI] = BIobj.getTile([iZ, iC, iT],[4 5], 5);
+                        
+            nd2r = bfGetReader(TestCase.testfile);
+            
+            imgND2r = bfGetPlane(nd2r,nd2r.getIndex(iZ - 1, iC - 1, iT - 1) + 1,...
+                tileROI(1), tileROI(2), tileROI(3), tileROI(4));
+            
+            TestCase.verifyEqual(tileImg, imgND2r);
+                    
         end
         
     end
