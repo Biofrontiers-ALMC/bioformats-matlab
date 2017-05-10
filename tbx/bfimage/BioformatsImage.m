@@ -1,26 +1,37 @@
 classdef BioformatsImage
     % BIOFORMATSIMAGE  Class to read microscope images
-    %   The Bioformats toolbox is a standalone Java library for reading and
-    %   writing life sciences image formats. This class is designed to
-    %   extend the MATLAB version of the toolbox with API-like
-    %   functionality to make it easier to use.
     %
     %   R = BIOFORMATSIMAGE(filename) creates a new BioformatsImage object
     %   R which is linked to the filename specified. 
     %
-    %   To get an image:
-    %    I = R.getPlane(iZ, iC, iT,   
+    %   To get a specific image plane, using ZCTS coordinates:
     %
+    %     I = R.getPlane([iZ, iC, iT, iS]);
     %
+    %   where iZ = z-plane index, iC = channel index, iT = timepoint index,
+    %   and iS = series. Bioformats toolbox users: Be aware that ZCTS is
+    %   one-based in this class.
     %
+    %   You can also get an ROI:
     %
-    %   NOTE: This class requires the use of the Bioformats toolbox*.
-    %   Whenever an object is created, it will check if the toolbox exists.
-    %   If it does not, it will download and install a compatible version
-    %   (currently 5.4.0) to the MATLAB path.
-    %   
-    %   *The Bioformats MATLAB toolbox is developed by the Open Microscopy
-    %   Environment team (http://http://www.openmicroscopy.org).
+    %     I = R.getPlane([iZ, iC, iT, iS],'ROI',[top left, width, height]);
+    %
+    %   For large images, it can be helpful to get an image in tiles:
+    %
+    %     I = R.getTile([iZ, iC, iT, iS], numTiles, tileIndex);
+    %
+    %   where numTiles is the number of tiles to divide into [rows, cols],
+    %   and the tileIndex is the desired tile number. The tileIndex follows
+    %   MATLAB numbering convention and increases down the rows first, then
+    %   along the columns.
+    %
+    %   NOTE: This class uses the Bioformats toolbox, a standalone Java
+    %   library for reading and writing life sciences image formats
+    %   developed by the Open Microscopy Environment team
+    %   (http://http://www.openmicroscopy.org). Whenever an object is
+    %   created, it will check if the toolbox exists. If it does not, it
+    %   will download and install a compatible version (currently 5.4.0) to
+    %   the MATLAB path.
     
     properties (AbortSet)   %Filename and series number
         filename = '';
@@ -44,7 +55,7 @@ classdef BioformatsImage
     end
     
     properties (Transient, Hidden, SetAccess = private)
-        bfReader    %This property is used to store the bioformats reader
+        bfReader
         metadata
     end
     
@@ -57,10 +68,16 @@ classdef BioformatsImage
         
         function obj = BioformatsImage(varargin)
             % Create a new class object
-            %   To create a new object, call I = BIOFORMATSIMAGE(filename)
+            %
+            % R = BIOFORMATSIMAGE(filename) returns the object in R.
             
             if nargin > 0
-                obj.filename = varargin{1};
+                if nargin == 1
+                    obj.filename = varargin{1};
+                else
+                    error('BioformatsImage:TooManyInputArguments',...
+                        'Too many input arguments. Was expecting one.')
+                end
             end
             
         end
@@ -82,7 +99,7 @@ classdef BioformatsImage
                     'Could not find %s. Provide the full filename or make sure the image folder is on the MATLAB path.',filename);
             end
             
-            %Make sure that the full path to the file is stores
+            %Make sure that the full path to the file is stored
             [fPath,fName,fExt] = fileparts(filename);
             
             if ~isempty(fPath)
@@ -211,6 +228,11 @@ classdef BioformatsImage
             
         end
 
+        function versionOut = version(obj)
+            
+            versionOut = sprintf('BioformatsImage class Version %s',obj.thisVersion);
+            
+        end
     end
     
     methods %Base functions
@@ -242,7 +264,7 @@ classdef BioformatsImage
         function [imgOut, timestamp] = getPlane(obj,planeSpec,varargin)
             %Get image at specified index
             %
-            %  imgOut = getImage(iZ, iC, iT)
+            %  imgOut = getImage([iZ, iC, iT])
             %
             %  imgOut = getImage(iZ, iC, iT, iS);
             %
@@ -250,47 +272,32 @@ classdef BioformatsImage
             %
             %  ROI = [XMIN YMIN WIDTH HEIGHT];
             
+            %Parse the variable input argument
             ip = inputParser;
-            ip.addRequired('iZ',@(x) x > 0 && x <= obj.sizeZ);
-            ip.addRequired('iC',@(x) x > 0 && x <= obj.sizeC);
-            ip.addRequired('iT',@(x) x > 0 && x <= obj.sizeT);
-            ip.addOptional('iS', [], @(x) x > 0 && x <= obj.seriesCount);
-            
             ip.addParameter('ROI',[],@(x) numel(x) == 4 && all(x > 0));
-            
-            planeSpec = num2cell(planeSpec);
-            
-            ip.parse(planeSpec{:},varargin{:});
+            ip.parse(varargin{:});
             
             %Check that reader object already exists
             if ~bfReaderExist(obj)
                 %Get a reader for the file
                 obj = obj.getReader;
             end
-            
-            if ~isempty(ip.Results.iS)
-                obj.series = ip.Results.iS;
-            end            
-            
-            %Get actual image index
-            bfIndex = obj.bfReader.getIndex(ip.Results.iZ - 1,...
-                ip.Results.iC - 1, ip.Results.iT - 1) + 1;
-            
+                        
             %Get image
             if ~isempty(ip.Results.ROI)
                 xMin = ip.Results.ROI(1);
                 yMin = ip.Results.ROI(2);
                 roiWidth = ip.Results.ROI(3);
                 roiHeight = ip.Results.ROI(4);
-                imgOut = bfGetPlane(obj.bfReader,bfIndex,xMin,yMin,roiWidth,roiHeight);
+                imgOut = bfGetPlane(obj.bfReader,obj.getIndex(planeSpec),xMin,yMin,roiWidth,roiHeight);
             else
                 %Get full image
-                imgOut = bfGetPlane(obj.bfReader,bfIndex);
+                imgOut = bfGetPlane(obj.bfReader,obj.getIndex(planeSpec));
             end
             
             if nargout > 1                
                 %Get the timestamp
-                timestamp = double(obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex).value);
+                timestamp = double(obj.metadata.getPlaneDeltaT(obj.series - 1,obj.getIndex(planeSpec)).value);
             end
             
         end
@@ -355,18 +362,12 @@ classdef BioformatsImage
             tsunits = BioformatsImage.getUnitString(tsStr);
             
         end
-        
-        function versionOut = version(obj)
-            
-            versionOut = sprintf('BioformatsImage class Version %s',obj.thisVersion);
-            
-        end
-        
+                
     end
 
     methods %Stack functions
         
-        function imgOut = getZstack(obj, channel, timepoint, varargin)
+        function [imgOut, roiOut] = getZstack(obj, cts, varargin)
             %Gets a z-stack for the specified channel and timepoint
             %
             %  I = O.GETZSTACK(Channel, Timepoint)
@@ -374,43 +375,25 @@ classdef BioformatsImage
             %  If Timepoint is not set, it defaults to 1.
             
             ip = inputParser;
-            ip.addRequired('iC',@(x) isscalar(x) || ischar(x));
-            ip.addOptional('iT', 1, @(x) x > 0 && x <= obj.sizeT);
-            ip.addParameter('ROI',[],@(x) numel(x) == 4 && all(x > 0));
-            ip.addParameter('ZRange',1:obj.sizeZ,@(x) min(x) > 0 && max(x) <= obj.sizeZ);
+            ip.addParameter('ROI',[1, 1, obj.width,obj.height],@(x) numel(x) == 4 && all(x > 0));
+            ip.addParameter('zRange',1:obj.sizeZ,@(x) min(x) > 0 && max(x) <= obj.sizeZ);
+            ip.parse(varargin{:});
             
-            ip.parse(channel, timepoint, varargin{:});
-            
-            %Get the results of the parser
-            zRange = ip.Results.ZRange;
-            roi = ip.Results.ROI;
-            iT = ip.Results.iT;
-            
-            %Check that reader object already exists
-            if ~bfReaderExist(obj)
-                %Get a reader for the file
-                obj = obj.getReader;
+            %Expected planeSpec has up to three inputs [C, T, S] (no Z
+            %since this is a z-stack!)
+            if numel(cts) > 3
+                error('BioformatsImage:getZstack:TooManyInputsPlaneSpec',...
+                    'Expected plane spec to have up to 3 inputs [C, T, S] only.');
             end
-            
-            %Convert channel name to index (if it is already an index, the
-            %function will just return the same number)
-            iC = obj.channelname2ind(channel);
-           
+                        
             %Initialize a storage matrix
-            if ~isempty(ip.Results.ROI)
-                imgOut = zeros(roi(4),roi(3),numel(zRange),'uint16');
-            else
-                imgOut = zeros(obj.height,obj.width,(zRange),'uint16');
+            imgOut = zeros(ip.Results.ROI(4),ip.Results.ROI(3),numel(ip.Results.zRange),'uint16');
+    
+            for iZ = ip.Results.zRange
+                imgOut(:,:,iZ) = obj.getPlane(obj.getIndex(cts), 'ROI', ip.Results.ROI);
             end
             
-            for iZ = zRange
-                if ~isempty(ip.Results.ROI)                
-                    imgOut(:,:,iZ) = obj.getPlane(iZ, iC, iT, 'ROI', roi);                
-                else
-                    imgOut(:,:,iZ) = obj.getPlane(iZ, iC, iT);                
-                end
-            end
-            
+            roiOut = ip.Results.ROI;
         end
         
         function imgOut = getChannel(obj, channel, varargin)
@@ -537,16 +520,9 @@ classdef BioformatsImage
         
         function [tileDataOut, roiOut] = getTile(obj, planeSpec, numTiles, tileIndex)
             
-            %Parse the first input
             ip = inputParser;
-%             ip.addOptional('iZ',1,@(x) isscalar(x))
-%             ip.addRequired('iC',@(x) isscalar(x))
-%             ip.addOptional('iT',1,@(x) isscalar(x));
-%             ip.addOptional('iS',obj.series,@(x) isscalar(x));
-            
             ip.addRequired('NumTiles',@(x) numel(x) == 2 && all(x > 0));
             ip.addRequired('TileRange', @(x) all(x > 0));
-                        
             ip.parse(numTiles,tileIndex);
             
             %Check that the tile range fits within the total number of
@@ -662,13 +638,7 @@ classdef BioformatsImage
             
         end        
         
-        function [iZ, iC, iT, iS] = parseZCTS(vecIn, varargin)
-            
-            ip = inputParser;
-            ip.addParameter('RequiredParam','c',@(x) ismember(lower(x),{'z','c','t','s'}));
-            ip.parse(varargin{:})
-            
-        end
+
         
     end
     
@@ -728,6 +698,54 @@ classdef BioformatsImage
         
         end
         
+        function imgIndex = getIndex(obj,planeSpec,varargin)
+            %Get image index from zcts coordinates.
+            
+            ip = inputParser;
+            ip.addOptional('PlaneOrder','zcts',@(x) ischar(x));
+            ip.parse(varargin{:});
+                
+            %Defaults
+            iZ = 1;
+            iC = 1;
+            iT = 1;
+            
+            if isnumeric(planeSpec)
+                planeSpec = num2cell(planeSpec);
+            end
+            
+            for ii = 1:numel(planeSpec)
+                
+                switch lower(ip.Results.PlaneOrder(ii))
+                    
+                    case 'z'
+                        iZ = planeSpec{ii};
+                        
+                    case 'c'
+                        if ischar(planeSpec{ii})
+                            iC = obj.channelname2ind(planeSpec{ii});
+                        else
+                            iC = planeSpec{ii};
+                        end
+                        
+                    case 't'
+                        iT = planeSpec{ii};
+                        
+                    case 's'
+                        obj.series = planeSpec{ii};
+                        
+                end
+                
+            end
+            
+            if any([iZ, iC, iT] <= 0)
+                error('BioformatsImage:getIndex:IndexIsOneBased',...
+                    'ZCT coordinates are one-based and must be greater than zero.')
+            end
+            
+            %Get actual image index
+            imgIndex = obj.bfReader.getIndex(iZ - 1, iC - 1, iT - 1) + 1;
+        end
     end
     
     methods (Access = private)

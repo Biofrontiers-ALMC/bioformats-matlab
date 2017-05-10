@@ -3,7 +3,7 @@ classdef testBioformatsImage < matlab.unittest.TestCase
     properties
         
         testfile = 'test.nd2';
-        
+        zStackTestfile = '../local/zStackTest.nd2';
     end
     
     methods(TestClassSetup)
@@ -18,7 +18,7 @@ classdef testBioformatsImage < matlab.unittest.TestCase
     
     methods (Test)
 
-        function testSetUnknownFilename(TestCase)
+        function setUnknownFilename(TestCase)
            
             to = BioformatsImage;
             
@@ -33,7 +33,7 @@ classdef testBioformatsImage < matlab.unittest.TestCase
             
         end
         
-        function testSetFilename(TestCase)
+        function setFilename(TestCase)
             
             to = BioformatsImage;
             
@@ -43,7 +43,7 @@ classdef testBioformatsImage < matlab.unittest.TestCase
             
         end
         
-        function testGetPlane(TestCase)
+        function getPlane(TestCase)
             
             BIobj = BioformatsImage(TestCase.testfile);
             
@@ -56,7 +56,20 @@ classdef testBioformatsImage < matlab.unittest.TestCase
             TestCase.verifyEqual(imgBFI, imgND2r);
         end
         
-        function testGetTile(TestCase)
+        function getPlaneByChannelName (TestCase)
+            BIobj = BioformatsImage(TestCase.testfile);
+            
+            imgBFI = BIobj.getPlane({1,'Mono',1});
+            
+            nd2r = bfGetReader(TestCase.testfile);
+            
+            imgND2r = bfGetPlane(nd2r,nd2r.getIndex(0,0,0) + 1);
+            
+            TestCase.verifyEqual(imgBFI, imgND2r);
+            
+        end
+        
+        function getTile(TestCase)
             
             %[Z C T]
             iZ = 1;
@@ -74,6 +87,27 @@ classdef testBioformatsImage < matlab.unittest.TestCase
             
             TestCase.verifyEqual(tileImg, imgND2r);
                     
+        end
+        
+        function getZStack(TestCase)
+            
+            testReader = BioformatsImage(TestCase.zStackTestfile);
+            testData = testReader.getZstack(1);
+                        
+            nd2r = bfGetReader(TestCase.zStackTestfile);
+            sizeZ = nd2r.getSizeZ;
+            expectedImgData = zeros(nd2r.getSizeY,nd2r.getSizeX,nd2r.getSizeZ,'uint16');
+            for iZ = 1:numel(sizeZ)
+                expectedImgData(:,:,iZ) = bfGetPlane(nd2r,nd2r.getIndex(0, iZ - 1, 0) + 1);
+            end
+           
+            TestCase.verifyEqual(size(testData), size(expectedImgData));
+            
+            for ii = 1:3
+                randPlane = round(rand(1) * sizeZ);
+                TestCase.verifyEqual(testData(:,:,randPlane), expectedImgData(:,:,randPlane));
+            end
+            
         end
         
     end
