@@ -468,6 +468,33 @@ classdef BioformatsImage
             end
         end
         
+        function seriesOut = getSeries(obj, iSeries, varargin)
+            
+            ip = inputParser;
+            ip.addRequired('seriesNum',@(x) isnumeric(x) && x > 0 && x <= obj.seriesCount);
+            ip.KeepUnmatched = true;
+            ip.parse(iSeries, varargin{:});
+            
+            obj.series = ip.Results.seriesNum;
+            
+            seriesOut = cell(1, obj.sizeT);
+            
+            for iT = 1:obj.sizeT
+                
+                currImageData = zeros(obj.height, obj.width, obj.sizeC,'uint16');
+                
+                for iC = 1:obj.sizeC
+                    
+                    currImageData(:,:,iC) = obj.getPlane([1,iC,iT]);
+                    
+                end
+                
+                seriesOut{iT} = currImageData;
+                
+            end
+            
+        end
+        
         function MAPout = getZmap(obj,channel, varargin)
             %Get maximum amplitude projection of an image along the z-plane
             %
