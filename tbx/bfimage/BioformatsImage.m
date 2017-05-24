@@ -71,6 +71,10 @@ classdef BioformatsImage
             %
             % R = BIOFORMATSIMAGE(filename) returns the object in R.
             
+            if ~obj.bfTbxExist
+                obj.installBFtbx;
+            end
+            
             if nargin > 0
                 if nargin == 1
                     obj.filename = varargin{1};
