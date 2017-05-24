@@ -327,16 +327,16 @@ classdef BioformatsImage
             imgIndex = XYloc + (frame - 1) * obj.seriesCount;
             
             %Calculate the actual series number and timepoint
-            iS = floor(imgIndex/obj.sizeT);
+            iS = floor(imgIndex/obj.sizeT) + 1;
             
-            iT = imgIndex - (iS * obj.sizeT);
+            iT = imgIndex - ((iS - 1) * obj.sizeT);
             
             %Get the image plane
             obj.series = iS;
             
             %Get the image (passing in the varargin, assumed to be ROI
             %information)
-            imgOut = obj.getPlane(1, iC, iT, varargin);
+            imgOut = obj.getPlane([1, iC, iT], varargin{:});
             
             %Get timestamp if output is assigned            
             if nargout > 1
@@ -637,10 +637,13 @@ classdef BioformatsImage
             
             if ~exist('bfGetReader','file')
                 
-                %Check if there is a bfmatlab folder in the same folder
-                if exist('bfmatlab','dir')
+                %Check if there is a bfmatlab folder in the toolbox folder
+                
+                tbxFolder = fileparts(which('BioformatsImage'));
+                
+                if exist(fullfile(tbxFolder,'bfmatlab'),'dir')
                     %Folder exists so add it to the path
-                    addpath('bfmatlab');
+                    addpath(fullfile(tbxFolder,'bfmatlab'));
                 else
                     tbxExists = false;
                     return;
@@ -668,8 +671,6 @@ classdef BioformatsImage
             unitStr = strIn(unitStartIdx: unitStartIdx + unitEndIdx);
             
         end        
-        
-
         
     end
     
@@ -783,29 +784,33 @@ classdef BioformatsImage
         
         function installBFtbx(obj)
             %Downloads and installs the Bioformats Toolbox
+            %
+            % The default install location is the toolbox folder
             
+            tbxFolder = fileparts(which('BioformatsImage'));
+                        
             %Create a temporary directory
-            if ~exist('temp','dir')
-                mkdir('temp')
+            if ~exist(fullfile(tbxFolder,'temp'),'dir')
+                mkdir(fullfile(tbxFolder,'temp'))
             end
             
             %Download the toolbox from the OME website
             fprintf('Downloading Bioformats toolbox...');
             
-            fn = websave('temp/bfmatlab.zip',obj.bfTbxURL);
+            fn = websave(fullfile(tbxFolder,'temp','bfmatlab.zip'),obj.bfTbxURL);
             fprintf('Done.\n');
             
             fprintf('Installing toolbox...')
             %Unzip the toolbox
-            unzip(fn);
+            unzip(fn,tbxFolder);
             
             %Add toolbox to path
             addpath('bfmatlab')
             fprintf('Done.\n');
             
             %Remove temporary files and directory
-            if exist('temp','dir')
-                rmdir('temp','s')
+            if exist(fullfile(tbxFolder,'temp'),'dir')
+                rmdir(fullfile(tbxFolder,'temp'),'s')
             end
             
         end
