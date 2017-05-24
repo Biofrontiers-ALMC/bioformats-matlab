@@ -312,7 +312,8 @@ classdef BioformatsImage
             %  I = O.GETXYPLANE(Channel, Location, Frame)
             %
             %  Assumes that Z = 1.
-            % This is to handle the interleaving
+            % This is to handle the interleaving issue when the microscope
+            % saves multi-XY images.
             
             %Check that reader object already exists
             if ~bfReaderExist(obj)
@@ -805,7 +806,7 @@ classdef BioformatsImage
             unzip(fn,tbxFolder);
             
             %Add toolbox to path
-            addpath('bfmatlab')
+            addpath(fullfile(tbxFolder,'bfmatlab'))
             fprintf('Done.\n');
             
             %Remove temporary files and directory
