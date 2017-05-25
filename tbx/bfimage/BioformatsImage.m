@@ -311,9 +311,18 @@ classdef BioformatsImage
             %
             %  I = O.GETXYPLANE(Channel, Location, Frame)
             %
-            %  Assumes that Z = 1.
-            % This is to handle the interleaving issue when the microscope
-            % saves multi-XY images.
+            %  Currently, the code assumes that iZ = 1.
+            %
+            %  When saving multi-XY images in Nikon Jobs, there seems to be
+            %  an issue where the images are not stored in the correct
+            %  order. The image sequence then becomes interleaved:
+            %      {(XY1, T1, C1), (XY1, T1, C2), (XY2, T1, C1), (XY2, T1,
+            %      C2),...}
+            %  
+            %  The series count corresponds to the number of XY locations.
+            %
+            %  To solve this issue, this function recalculates the image
+            %  index assuming this interleaved order.
             
             %Check that reader object already exists
             if ~bfReaderExist(obj)
@@ -325,24 +334,24 @@ classdef BioformatsImage
             iC = obj.channelname2ind(channel);
             
             %Calculate the image index
-            imgIndex = XYloc + (frame - 1) * obj.seriesCount;
+            imgIndex = XYloc + (frame - 1) * obj.seriesCount - 1;
             
             %Calculate the actual series number and timepoint
-            iS = floor(imgIndex/obj.sizeT) + 1;
+            iS = floor(imgIndex/obj.sizeT);
             
-            iT = imgIndex - ((iS - 1) * obj.sizeT);
+            iT = imgIndex - (iS * obj.sizeT);
             
             %Get the image plane
-            obj.series = iS;
-            
+            obj.series = iS + 1;
+
             %Get the image (passing in the varargin, assumed to be ROI
             %information)
-            imgOut = obj.getPlane([1, iC, iT], varargin{:});
+            imgOut = obj.getPlane([1, iC, iT + 1], varargin{:});
             
             %Get timestamp if output is assigned            
             if nargout > 1
                 %Resolve the bioformats index
-                bfIndex = obj.bfReader.getIndex(0, iC - 1, iT - 1) + 1;
+                bfIndex = obj.bfReader.getIndex(0, iC - 1, iT) + 1;
                 
                 %Get the timestamp
                 timestamp = double(obj.metadata.getPlaneDeltaT(iS - 1,bfIndex).value);
