@@ -1,6 +1,6 @@
 #Only allow m-files in the testing and main toolbox directory
-testing/*
-!testing/*.m
+tests/*
+!tests/*.m
 
 tbx/bfimage/*
 !tbx/bfimage/*.m
@@ -10,3 +10,5 @@ local/*
 !local/.dummy
 
 *.mltbx
+
+*.nd2

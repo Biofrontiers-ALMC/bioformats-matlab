@@ -35,13 +35,13 @@ classdef BioformatsImage
     
     properties (AbortSet)   %Filename and series number
         filename = '';
-        series = 1;
     end
     
     properties (Dependent)  %Image file attributes
         width
         height
         
+        series
         seriesCount
         
         sizeZ   %Number of z-planes
@@ -237,6 +237,7 @@ classdef BioformatsImage
             versionOut = sprintf('BioformatsImage class Version %s',obj.thisVersion);
             
         end
+        
     end
     
     methods %Base functions

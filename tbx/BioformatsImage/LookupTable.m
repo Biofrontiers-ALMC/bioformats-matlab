@@ -1,4 +1,5 @@
 classdef LookupTable
+    %LookupTable information
     
     properties
        
