@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.toolbox" plugin-version="1.0">
-  <configuration build-checksum="2383194018" file="C:\Users\jwtay\Documents\Projects\core-code\bioformats-image-toolbox\BioformatsImage.prj" location="C:\Users\jwtay\Documents\Projects\core-code\bioformats-image-toolbox" name="BioformatsImage" target="target.toolbox" target-name="Package Toolbox">
+  <configuration build-checksum="2695216841" file="D:\Jian\Documents\Projects\coreCode\bioformats-image\BioformatsImage.prj" location="D:\Jian\Documents\Projects\coreCode\bioformats-image" name="BioformatsImage" target="target.toolbox" target-name="Package Toolbox">
     <param.appname>BioformatsImage</param.appname>
     <param.authnamewatermark>Jian Wei Tay</param.authnamewatermark>
     <param.email>jian.tay@colorado.edu</param.email>
@@ -26,6 +26,9 @@ Note: It is no longer necessary to download the Bio-Formats MATLAB toolbox manua
       <item>/bfimage/bfmatlab/bioformats_package.jar</item>
     </param.javaclasspath.excludes>
     <unset>
+      <param.authnamewatermark />
+      <param.email />
+      <param.company />
       <param.output />
       <param.products.name />
       <param.products.id />
@@ -42,14 +45,14 @@ Note: It is no longer necessary to download the Bio-Formats MATLAB toolbox manua
       <file>${PROJECT_ROOT}\tbx</file>
     </fileset.rootdir>
     <fileset.rootfiles>
-      <file>${PROJECT_ROOT}\tbx\bfimage</file>
-      <file>${PROJECT_ROOT}\tbx\Contents.m</file>
+      <file>${PROJECT_ROOT}\tbx\BioformatsImage</file>
+      <file>${PROJECT_ROOT}\tbx\docs</file>
     </fileset.rootfiles>
     <fileset.depfun.included />
     <fileset.depfun.excluded />
     <fileset.package />
     <build-deliverables>
-      <file location="C:\Users\jwtay\Documents\Projects\core-code\bioformats-image-toolbox" name="BioformatsImage.mltbx" optional="false">C:\Users\jwtay\Documents\Projects\core-code\bioformats-image-toolbox\BioformatsImage.mltbx</file>
+      <file location="D:\Jian\Documents\Projects\coreCode\bioformats-image" name="BioformatsImage.mltbx" optional="false">D:\Jian\Documents\Projects\coreCode\bioformats-image\BioformatsImage.mltbx</file>
     </build-deliverables>
     <workflow />
     <matlab>
