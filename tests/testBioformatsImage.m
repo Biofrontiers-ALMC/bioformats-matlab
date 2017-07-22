@@ -3,7 +3,7 @@ classdef testBioformatsImage < matlab.unittest.TestCase
     properties
         
         testfile = 'test.nd2';
-        zStackTestfile = '../local/zStackTest.nd2';
+%         zStackTestfile = '../local/zStackTest.nd2';
     end
     
     methods(TestClassSetup)
@@ -12,7 +12,7 @@ classdef testBioformatsImage < matlab.unittest.TestCase
             
             p = path;   %Store current path
             TestCase.addTeardown(@path,p);  %Restore it on teardown
-            addpath('../tbx/bfimage/');  %Add the toolbox path
+            addpath('../tbx/BioformatsImage/');  %Add the toolbox path
         end
     end
     
@@ -31,6 +31,7 @@ classdef testBioformatsImage < matlab.unittest.TestCase
             end
             TestCase.verifyEqual(ME.identifier,'BioformatsImage:CannotFindFile');
             
+            clear to
         end
         
         function setFilename(TestCase)
@@ -47,7 +48,7 @@ classdef testBioformatsImage < matlab.unittest.TestCase
             
             BIobj = BioformatsImage(TestCase.testfile);
             
-            imgBFI = BIobj.getPlane([1 1 1]);
+            imgBFI = BIobj.getPlane(1, 1, 1);
             
             nd2r = bfGetReader(TestCase.testfile);
             
@@ -59,7 +60,7 @@ classdef testBioformatsImage < matlab.unittest.TestCase
         function getPlaneByChannelName (TestCase)
             BIobj = BioformatsImage(TestCase.testfile);
             
-            imgBFI = BIobj.getPlane({1,'Mono',1});
+            imgBFI = BIobj.getPlane(1,'Mono',1);
             
             nd2r = bfGetReader(TestCase.testfile);
             
@@ -89,26 +90,59 @@ classdef testBioformatsImage < matlab.unittest.TestCase
                     
         end
         
-        function getZStack(TestCase)
+    end
+    
+    methods (Test)
+        
+        function checkDelete (TestCase)
+            %Related to Issue #259: Image remains "in use" in MATLAB
+            %
+            %After clearing the BioformatsImage object, the file remains in
+            %memory (cannot rename or delete).
+            %
+            %Solution: Call the close() function on the bfReader object
+            %before deleting the object.
             
-            testReader = BioformatsImage(TestCase.zStackTestfile);
-            testData = testReader.getZstack(1);
-                        
-            nd2r = bfGetReader(TestCase.zStackTestfile);
-            sizeZ = nd2r.getSizeZ;
-            expectedImgData = zeros(nd2r.getSizeY,nd2r.getSizeX,nd2r.getSizeZ,'uint16');
-            for iZ = 1:numel(sizeZ)
-                expectedImgData(:,:,iZ) = bfGetPlane(nd2r,nd2r.getIndex(0, iZ - 1, 0) + 1);
-            end
-           
-            TestCase.verifyEqual(size(testData), size(expectedImgData));
+            bfObj = BioformatsImage(TestCase.testfile);
             
-            for ii = 1:3
-                randPlane = round(rand(1) * sizeZ);
-                TestCase.verifyEqual(testData(:,:,randPlane), expectedImgData(:,:,randPlane));
-            end
+            %Try renaming the file. This should cause an error since the
+            %image file should be locked by MATLAB.
+            [fpath, fname] = fileparts(TestCase.testfile);
+            mvSuccess = movefile(fullfile(fpath,fname), fullfile(fpath,'new.nd2'));
+            TestCase.assertEqual(mvSuccess,false);
             
+            %Delete the obj
+            clear bfObj
+            
+            mvSuccess = movefile(fullfile(fpath,fname), fullfile(fpath,'new.nd2'));
+            TestCase.verifyEqual(mvSuccess,true);
+            
+            %Rename the file back to the original
+            mvSuccess = movefile(fullfile(fpath,'new.nd2'),fullfile(fpath,fname));
         end
         
     end
+    
 end
+
+%Functionality removed in v1.0.0
+%         function getZStack(TestCase)
+%             
+%             testReader = BioformatsImage(TestCase.zStackTestfile);
+%             testData = testReader.getZstack(1);
+%                         
+%             nd2r = bfGetReader(TestCase.zStackTestfile);
+%             sizeZ = nd2r.getSizeZ;
+%             expectedImgData = zeros(nd2r.getSizeY,nd2r.getSizeX,nd2r.getSizeZ,'uint16');
+%             for iZ = 1:numel(sizeZ)
+%                 expectedImgData(:,:,iZ) = bfGetPlane(nd2r,nd2r.getIndex(0, iZ - 1, 0) + 1);
+%             end
+%            
+%             TestCase.verifyEqual(size(testData), size(expectedImgData));
+%             
+%             for ii = 1:3
+%                 randPlane = round(rand(1) * sizeZ);
+%                 TestCase.verifyEqual(testData(:,:,randPlane), expectedImgData(:,:,randPlane));
+%             end
+%             
+%         end

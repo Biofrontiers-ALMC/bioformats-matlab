@@ -60,6 +60,7 @@ classdef BioformatsImage
     end
     
     properties (Transient, Hidden, SetAccess = private)
+        cleanup
         bfReader
         metadata
     end
@@ -90,6 +91,8 @@ classdef BioformatsImage
                         'Too many input arguments. Was expecting one.')
                 end
             end
+            
+            obj.cleanup = onCleanup(@()delete(obj));
             
         end
         
@@ -243,6 +246,12 @@ classdef BioformatsImage
             
             verStr = ver(class(obj));
             versionOut = verStr.Version;
+            
+        end
+        
+        function delete(obj)
+            
+            obj.bfReader.close;
             
         end
         
