@@ -60,6 +60,7 @@ classdef BioformatsImage
     end
     
     properties (Transient, Hidden, SetAccess = private)
+        cleanup
         bfReader
         metadata
     end
@@ -91,6 +92,7 @@ classdef BioformatsImage
                 end
             end
             
+            obj.cleanup = onCleanup(@() delete(obj));
         end
         
         function obj = set.filename(obj,filename)
@@ -246,6 +248,11 @@ classdef BioformatsImage
             
         end
         
+        function delete(obj)
+            
+            obj.bfReader.close;
+            
+        end
     end
     
     methods %Base functions
