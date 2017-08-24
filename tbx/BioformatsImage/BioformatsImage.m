@@ -254,7 +254,10 @@ classdef BioformatsImage
             obj.bfReader.close;
             
         end
+<<<<<<< HEAD
         
+=======
+>>>>>>> 45756fecb434310692e3b8362031a5b59eae2653
     end
     
     methods %Base functions
