@@ -137,7 +137,7 @@ classdef BioformatsImage
         function obj = set.series(obj,iS)
             %Set series number
             
-            if isempty(obj.bfReader) %#ok<MCSUP>
+            if isempty(obj.bfReader)
                 obj = obj.getReader;
             end
             
@@ -146,12 +146,12 @@ classdef BioformatsImage
                     'Expected series number to be an integer.')
             end
             
-            if iS <= 0 || iS > obj.seriesCount %#ok<MCSUP>
+            if iS <= 0 || iS > obj.seriesCount
                 error('BioformatsImage:RequestedSeriesOutOfBounds',...
-                    'Requested series must be > 0 and <= than %d.',obj.seriesCount); %#ok<MCSUP>
+                    'Requested series must be > 0 and <= than %d.',obj.seriesCount);
             end
             
-            obj.bfReader.setSeries(iS - 1); %#ok<MCSUP>
+            obj.bfReader.setSeries(iS - 1);
             
         end
         
@@ -254,10 +254,7 @@ classdef BioformatsImage
             obj.bfReader.close;
             
         end
-<<<<<<< HEAD
-        
-=======
->>>>>>> 45756fecb434310692e3b8362031a5b59eae2653
+
     end
     
     methods %Base functions
