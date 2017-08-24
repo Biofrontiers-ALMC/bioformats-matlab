@@ -1,9 +1,8 @@
-#Only allow m-files in the testing and main toolbox directory
-testing/*
-!testing/*.m
+*.mltbx
 
-tbx/bfimage/*
-!tbx/bfimage/*.m
+#Only allow m-files in the testing and main toolbox directory
+tests/*
+!tests/*.m
 
 #Ignore everything in the local folder except the dummy file (needed to get Git to keep the empty folder)
 local/*
