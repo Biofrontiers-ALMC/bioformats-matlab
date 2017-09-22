@@ -10,3 +10,6 @@ local/*
 
 *.mltbx
 *.nd2
+
+#Ignore the bfmatlab library if it gets downloaded
+tbx/BioformatsImage/bfmatlab

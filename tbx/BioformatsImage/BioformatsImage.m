@@ -305,10 +305,8 @@ classdef BioformatsImage
                 obj.series = ip.Results.iSeries;
             end
             
-            if ischar(iC)
-                %Resolve the channel name
-                iC = obj.channelname2ind(iC);
-            end
+            %Resolve the channel name
+            iC = obj.channelname2ind(iC);
             
             %Get the image
             if ~isempty(ip.Results.ROI)
@@ -564,9 +562,22 @@ classdef BioformatsImage
         function chInd = channelname2ind(obj,channelIn)
             %Convert channel name to index
             
+            %If it is already a number, then nothing to do
             if isnumeric(channelIn)
                 chInd = channelIn;
                 return
+            end
+            
+            %If it is a cell (happens if iterating over channelNames), then
+            %make sure that the cell has a single string entry
+            if iscell(channelIn)
+                if numel(channelIn) > 1
+                    error('BioformatsImage:channelname2ind:TooManyChannels',...
+                        'Too many channel names specified at once. Only one channel expected.');                    
+                end
+                
+                channelIn = channelIn{1};
+                
             end
             
             %Find the matching name
