@@ -393,7 +393,7 @@ classdef BioformatsImage
             %  data.
             
             ip = inputParser;
-            ip.addOptional('TimeRange',Inf,@(x) isinf(x) || isnumeric(x));
+            ip.addOptional('TimeRange',Inf,@(x) all(isinf(x)) || isnumeric(x));
             ip.parse(varargin{:});
             
             %Resolve channel name
