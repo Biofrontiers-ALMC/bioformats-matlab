@@ -411,11 +411,11 @@ classdef BioformatsImage
             for iT = timeRange
                 %Resolve the bioformats index
                 bfIndex = obj.getIndex(iZ,iC,iT);
-                timestamps(iT) = double(obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex).value);
+                timestamps(iT) = double(obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex - 1).value);
             end
             
             %Get the unit string
-            tsStr = char(obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex).toString);
+            tsStr = char(obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex - 1).toString);
             
             %Convert the string into a char
             tsunits = BioformatsImage.unitStrToChar(tsStr);
