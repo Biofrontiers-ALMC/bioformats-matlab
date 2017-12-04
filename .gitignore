@@ -1,4 +1,6 @@
 *.mltbx
+*.asv
+*.nd2
 
 #Only allow m-files in the testing and main toolbox directory
 tests/*

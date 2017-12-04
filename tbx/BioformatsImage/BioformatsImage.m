@@ -411,7 +411,13 @@ classdef BioformatsImage
             for iT = timeRange
                 %Resolve the bioformats index
                 bfIndex = obj.getIndex(iZ,iC,iT);
-                timestamps(iT) = double(obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex - 1).value);
+                currTS = obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex - 1);
+                if ~isempty(currTS)
+                    timestamps(iT) = double(currTS.value);
+                else
+                    warning('Timestamp empty');
+                    return;
+                end
             end
             
             %Get the unit string
