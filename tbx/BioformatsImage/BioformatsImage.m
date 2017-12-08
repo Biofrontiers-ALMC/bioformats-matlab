@@ -416,6 +416,7 @@ classdef BioformatsImage
                     timestamps(iT) = double(currTS.value);
                 else
                     warning('Timestamp empty');
+                    tsunits = '';
                     return;
                 end
             end
