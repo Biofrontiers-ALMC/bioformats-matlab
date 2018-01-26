@@ -1,14 +1,14 @@
 <deployment-project plugin="plugin.toolbox" plugin-version="1.0">
   <configuration build-checksum="1629181179" file="D:\Jian\Documents\Projects\coreCode\bioformats-image\code\build\Bioformats Image Toolbox.prj" location="D:\Jian\Documents\Projects\coreCode\bioformats-image\code\build" name="Bioformats Image Toolbox" target="target.toolbox" target-name="Package Toolbox">
-    <param.appname>Bioformats Image Toolbox (v1.0.3)</param.appname>
+    <param.appname>Bioformats Image Toolbox (v1.0.4)</param.appname>
     <param.authnamewatermark>Jian Wei Tay</param.authnamewatermark>
     <param.email>jian.tay@colorado.edu</param.email>
     <param.company>University of Colorado Boulder</param.company>
     <param.summary>Reads ND2 files</param.summary>
     <param.description />
     <param.screenshot>${PROJECT_ROOT}\BioformatsImageIcon.png</param.screenshot>
-    <param.version>1.0.3</param.version>
-    <param.output>${PROJECT_ROOT}\Bioformats Image Toolbox (v1.0.3).mltbx</param.output>
+    <param.version>1.0.4</param.version>
+    <param.output>${PROJECT_ROOT}\Bioformats Image Toolbox (v1.0.4).mltbx</param.output>
     <param.products.name />
     <param.products.id />
     <param.products.version />
@@ -56,7 +56,7 @@
     <fileset.depfun.excluded />
     <fileset.package />
     <build-deliverables>
-      <file location="D:\Jian\Documents\Projects\coreCode\bioformats-image\code\build" name="Bioformats Image Toolbox (v1.0.3).mltbx" optional="false">D:\Jian\Documents\Projects\coreCode\bioformats-image\code\build\Bioformats Image Toolbox (v1.0.3).mltbx</file>
+      <file location="D:\Jian\Documents\Projects\coreCode\bioformats-image\code\build" name="Bioformats Image Toolbox (v1.0.4).mltbx" optional="false">D:\Jian\Documents\Projects\coreCode\bioformats-image\code\build\Bioformats Image Toolbox (v1.0.4).mltbx</file>
     </build-deliverables>
     <workflow />
     <matlab>
