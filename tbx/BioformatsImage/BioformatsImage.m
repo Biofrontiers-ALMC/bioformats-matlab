@@ -9,11 +9,11 @@ classdef BioformatsImage
     %     I = R.getPlane(iZ, iC, iT, iS);
     %
     %   where iZ = z-plane index, iC = channel index, iT = timepoint index,
-    %   and iS = series. iS is optional; is not specified, the current
+    %   and iS = series. iS is optional; if not specified, the current
     %   series will be used.
     %
     %   **Bioformats toolbox users**: Be aware that ZCTS is one-based in
-    %   this class.
+    %   this class (i.e. the first frame index = 1).
     %
     %   You can also get an ROI:
     %
@@ -57,6 +57,9 @@ classdef BioformatsImage
         
         pxSize
         pxUnits
+        
+        bitDepth
+        lut
     end
     
     properties (Transient, Hidden, SetAccess = private)
@@ -77,6 +80,10 @@ classdef BioformatsImage
             % Create a new class object
             %
             % R = BIOFORMATSIMAGE(filename) returns the object in R.
+            
+            %Create the logger object (unused except to stop the log4j
+            %warnings)
+            logger = org.apache.log4j.Logger.getLogger(java.lang.String.class);            
             
             %Check if the toolbox exists
             if ~obj.bfTbxExist
@@ -249,12 +256,32 @@ classdef BioformatsImage
             
         end
         
-        function delete(obj)
+        function lut = get.lut(obj)
+            %Get the lookup table
             
-            obj.bfReader.close;
+            if obj.bitDepth == 8
+                lut = obj.bfReader.get8BitLookupTable;
+            elseif obj.bitDepth == 16
+                lut = obj.bfReader.get16BitLookupTable;
+            end
+            
+            %Format of LUT is: N x bitDepth
+        end
+        
+        function bitDepth = get.bitDepth(obj)
+            %Get the bit depth of the image
+            bitDepth = getValue(obj.metadata.getPixelsSignificantBits(0));
+        end
+        
+        function delete(obj)
+            %DELETE  Close the Bioformats Reader
+                        
+            if ~isempty(obj.bfReader)
+                obj.bfReader.close;
+            end
             
         end
-
+        
     end
     
     methods %Base functions
@@ -468,6 +495,32 @@ classdef BioformatsImage
             if numel(tileDataOut) == 1
                 tileDataOut = tileDataOut{:};
             end
+            
+        end
+        
+        function imgOut = getAdjustedPlane(obj, iZ, iC, iT)
+            %Get loookup table adjusted image
+            
+            imgOut = obj.getPlane(iZ, iC, iT);
+            
+            for ii = 1:size(imgOut,3)
+                currLUT = obj.lut(ii,:);
+                imgOut(:,:,ii) = currLUT(1 + imgOut);
+            end
+            
+        end
+        
+        function rgbOut = getCompositeImage(obj, iZ, iT)
+            %GETCOMPOSITEIMAGE  Get composite colored image
+            %
+            %  RGB = GETCOMPOSITEIMAGE(OBJ, Z, T) will get the image from
+            %  the z- and t-planes specified. The image will be colored
+            %  according to the lookup tables in the file.
+            
+            %TODO
+            
+            
+            
             
         end
         
