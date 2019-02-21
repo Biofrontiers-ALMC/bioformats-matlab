@@ -60,6 +60,13 @@ classdef BioformatsImage
         
         bitDepth
         lut
+        
+    end
+    
+    properties
+    
+        swapZandT logical = false; %Workaround for split z-planes
+        
     end
     
     properties (Transient, Hidden, SetAccess = private)
@@ -191,7 +198,11 @@ classdef BioformatsImage
         function sizeZ = get.sizeZ(obj)
             
             if ~isempty(obj.bfReader)
-                sizeZ = obj.bfReader.getSizeZ;
+                if ~obj.swapZandT
+                    sizeZ = obj.bfReader.getSizeZ;
+                else
+                    sizeZ = obj.bfReader.getSizeT;
+                end
             end
             
         end
@@ -207,7 +218,11 @@ classdef BioformatsImage
         function sizeT = get.sizeT(obj)
             
             if ~isempty(obj.bfReader)
-                sizeT = obj.bfReader.getSizeT;
+                if ~obj.swapZandT
+                    sizeT = obj.bfReader.getSizeT;
+                else
+                    sizeT = obj.bfReader.getSizeZ;
+                end
             end
             
         end
@@ -341,10 +356,13 @@ classdef BioformatsImage
                 yMin = ip.Results.ROI(2);
                 roiWidth = ip.Results.ROI(3);
                 roiHeight = ip.Results.ROI(4);
+                
                 imgOut = bfGetPlane(obj.bfReader,obj.getIndex(iZ, iC, iT),xMin,yMin,roiWidth,roiHeight);
+
             else
                 %Get full image
                 imgOut = bfGetPlane(obj.bfReader,obj.getIndex(iZ, iC, iT));
+
             end
             
             if nargout > 1
@@ -435,19 +453,23 @@ classdef BioformatsImage
             %Initialize a vector for the timestamps
             timestamps = zeros(1, numel(timeRange));
             
-            for iT = timeRange
-                %Resolve the bioformats index
-                bfIndex = obj.getIndex(iZ,iC,iT);
-                currTS = obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex - 1);
-                if ~isempty(currTS)
-                    timestamps(iT) = double(currTS.value);
-                else
-                    warning('Timestamp empty');
-                    tsunits = '';
-                    return;
-                end
-            end
             
+                for iT = timeRange
+                    %Resolve the bioformats index
+                    bfIndex = obj.getIndex(iZ,iC,iT);
+  
+                    
+                    currTS = obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex - 1);
+   
+                    if ~isempty(currTS)
+                        timestamps(iT) = double(currTS.value);
+                    else
+                        warning('Timestamp empty');
+                        tsunits = '';
+                        return;
+                    end
+                end
+
             %Get the unit string
             tsStr = char(obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex - 1).toString);
             
@@ -708,7 +730,11 @@ classdef BioformatsImage
         
         function imgIndex = getIndex(obj, iZ, iC, iT)
             %Get image index from ZCT coordinates.
-            imgIndex = obj.bfReader.getIndex(iZ - 1, iC - 1, iT - 1) + 1;
+            if ~obj.swapZandT
+                imgIndex = obj.bfReader.getIndex(iZ - 1, iC - 1, iT - 1) + 1;
+            else
+                imgIndex = obj.bfReader.getIndex(iT - 1, iC - 1, iZ - 1) + 1;
+            end
         end
         
     end
