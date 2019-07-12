@@ -546,6 +546,87 @@ classdef BioformatsImage
             
         end
         
+        function export(obj, fileOut, varargin)
+            %EXPORT  Export the ND2 image in different formats
+            
+            ip = inputParser;
+            addParameter(ip, 'format', '');
+            addParameter(ip, 'series', 1:obj.seriesCount);
+            addParameter(ip, 'channels', obj.channelNames);
+            addParameter(ip, 'frames', 1:obj.sizeT);
+            addParameter(ip, 'framerate', 5);
+            parse(ip, varargin{:});
+            
+            if isempty(ip.Results.format)
+                
+                %Try to determine the export format using the output
+                %filename extension
+                [~, ~, fExtOut] = fileparts(fileOut);
+                
+                if isempty(fExtOut)
+                    error('BioformatsImage:export:CannotDetermineOutputFormat', ...
+                        'Could not determine output format from filename. Please specify or include the desired extension.')
+                end
+                
+            else
+                
+                fExtOut = ip.Results.format;
+               
+            end
+            
+            switch lower(fExtOut)
+                
+                case {'.avi'}
+                    
+                    [dirOut, fnameOut] = fileparts(fileOut);
+                    
+                    if ~iscell(ip.Results.channels)
+                        if ischar(ip.Results.channels)
+                            channels = {ip.Results.channels};
+                        else
+                            channels = obj.channelNames(ip.Results.channels);
+                        end
+                    else
+                        channels = ip.Results.channels;                        
+                    end
+                    
+                    for iS = ip.Results.series
+                        
+                        for iC = 1:numel(channels)
+  
+                            vid = VideoWriter(fullfile(dirOut, [fnameOut, sprintf('_series%.0f_%s', iS, channels{iC}), fExtOut]));
+                            vid.FrameRate = ip.Results.framerate;
+                            open(vid)
+                            
+                            for iT = ip.Results.frames
+                                currFrame = zeros(obj.height, obj.width);
+                                currFrame(:, :) = double(getPlane(obj, 1, channels{iC}, iT));
+                                currFrame(:, :) = currFrame ./ max(currFrame(:));
+                                
+                                writeVideo(vid, currFrame)
+                            end
+                            
+                            close(vid)
+                            
+                        end
+                        
+                        
+                        
+                    end
+                    
+                case {'.tif', '.tiff'}
+                
+                case {'.png', '.jpg', '.jpeg'}
+                    
+                otherwise
+                    error('BioformatsImage:export:InvalidOutputFormat', ...
+                        'Invalid output format ''%s''. Please see ''help export'' for allowed formats.', fExtOut)
+                    
+            end
+
+            
+        end
+        
     end
     
     %--- Aux methods ---%    
