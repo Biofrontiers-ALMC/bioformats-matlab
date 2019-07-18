@@ -1,0 +1,153 @@
+        function export(obj, fileOut, varargin)
+            %EXPORT  Export image into a different format
+            %
+            %  EXPORT(OBJ, OUTPUTFILE) will export the image into the
+            %  format specified by the extension of the output filename. Be
+            %  default, all frames, channels, and series in the image will
+            %  be exported as individual files in the format specified.
+            %
+            %  Supported formats:
+            %  
+            %  AVI (Video files)
+            %
+            %      %
+            %   EXPORT(OBJ, OUTPUTFN) will export the image in a different image
+            %   format (e.g. PNG or TIF). Note that due to the closed source nature
+            %   of the ND2 format, you cannot export to another ND2 file.
+            
+            
+            ip = inputParser;
+            addParameter(ip, 'format', '');
+            addParameter(ip, 'series', 1:obj.seriesCount);
+            addParameter(ip, 'channels', obj.channelNames);
+            addParameter(ip, 'frames', 1:obj.sizeT);
+            addParameter(ip, 'framerate', 5);
+            parse(ip, varargin{:});
+            
+            if isempty(ip.Results.format)
+                
+                %Try to determine the export format using the output
+                %filename extension
+                [~, ~, fExtOut] = fileparts(fileOut);
+                
+                if isempty(fExtOut)
+                    error('BioformatsImage:export:CannotDetermineOutputFormat', ...
+                        'Could not determine output format from filename. Please specify or include the desired extension.')
+                end
+                
+            else
+                
+                fExtOut = ip.Results.format;
+               
+            end
+            
+            switch lower(fExtOut)
+                
+                case {'.avi'}
+                    
+                    [dirOut, fnameOut] = fileparts(fileOut);
+                    
+                    if ~iscell(ip.Results.channels)
+                        if ischar(ip.Results.channels)
+                            channels = {ip.Results.channels};
+                        else
+                            channels = obj.channelNames(ip.Results.channels);
+                        end
+                    else
+                        channels = ip.Results.channels;                        
+                    end
+                    
+                    for iS = ip.Results.series
+                        
+                        for iC = 1:numel(channels)
+  
+                            vid = VideoWriter(fullfile(dirOut, [fnameOut, sprintf('_series%.0f_%s', iS, channels{iC}), fExtOut]));
+                            vid.FrameRate = ip.Results.framerate;
+                            open(vid)
+                            
+                            for iT = ip.Results.frames
+                                currFrame = zeros(obj.height, obj.width);
+                                currFrame(:, :) = double(getPlane(obj, 1, channels{iC}, iT));
+                                currFrame(:, :) = currFrame ./ max(currFrame(:));
+                                
+                                writeVideo(vid, currFrame)
+                            end
+                            
+                            close(vid)
+                            
+                        end
+                        
+                    end
+                    
+                case {'.tif', '.tiff'}
+                
+                case {'.png', '.jpg', '.jpeg'}
+                    
+                otherwise
+                    error('BioformatsImage:export:InvalidOutputFormat', ...
+                        'Invalid output format ''%s''. Please see ''help export'' for allowed formats.', fExtOut)
+                    
+            end
+
+            
+        end
+        
+
+
+function [imgOut, timestamp, tsUnits] = getXYplane(obj, iC, iT, XYloc, varargin)
+            %GETXYPLANE  Get plane from multi-XY images
+            %
+            %  I = O.GETXYPLANE(iZ, iC, iT, XYLocation)
+            %
+            %  Currently, the code assumes that iZ = 1.
+            %
+            %  When saving multi-XY images in Nikon Jobs, there seems to be
+            %  an issue where the images are not stored in the correct
+            %  order. The image sequence then becomes interleaved:
+            %      {(XY1, T1, C1), (XY1, T1, C2), (XY2, T1, C1), (XY2, T1,
+            %      C2),...}
+            %
+            %  The series count corresponds to the number of XY locations.
+            %
+            %  To solve this issue, this function recalculates the image
+            %  index assuming this interleaved order.
+            
+            ip = inputParser;
+            ip.addParameter('ROI',[],@(x) numel(x) == 4 && all(x > 0));
+            ip.parse(varargin{:});
+            
+            %Check that reader object already exists
+            if ~bfReaderExist(obj)
+                %Get a reader for the file
+                obj = obj.getReader;
+            end
+            
+            %Resolve the channel index
+            iC = obj.channelname2ind(iC);
+            
+            %NOTE: I have not verified that calculations involving iZ is
+            %correct due to lack of data. Therefore, force this to = 1 to
+            %prevent the user from getting incorrect data.
+            iZ = 1;
+            
+            %Calculate the image index
+            imgIndex = XYloc + (iT - 1) * obj.seriesCount - 1;
+            
+            %Calculate the actual series number and timepoint
+            iS = floor(imgIndex/obj.sizeT);
+            
+            iT = imgIndex - (iS * obj.sizeT) + 1;
+            
+            %Get the image plane
+            obj.series = iS + 1;
+            
+            %Get the image
+            imgOut = obj.getPlane(iZ, iC, iT, 'ROI',ip.Results.ROI);
+            
+            %Get timestamp if output is assigned
+            if nargout > 1
+                %Get the timestamp
+                [timestamp, tsUnits] = obj.getTimestamps(iZ, iC, iT);
+            end
+        end
+

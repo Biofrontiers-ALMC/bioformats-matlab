@@ -1,43 +1,73 @@
 classdef BioformatsImage
-    % BIOFORMATSIMAGE  Class to read microscope images
+    % BIOFORMATSIMAGE  MATLAB implementation of the BioformatsImage package
     %
-    %   R = BIOFORMATSIMAGE(filename) creates a new BioformatsImage object
-    %   R which is linked to the filename specified.
-    %
-    %   To get a specific image plane, use ZCTS coordinates:
-    %
-    %     I = R.getPlane(iZ, iC, iT, iS);
-    %
-    %   where iZ = z-plane index, iC = channel index, iT = timepoint index,
-    %   and iS = series. iS is optional; if not specified, the current
-    %   series will be used.
-    %
-    %   **Bioformats toolbox users**: Be aware that ZCTS is one-based in
-    %   this class (i.e. the first frame index = 1).
-    %
-    %   You can also get an ROI:
-    %
-    %     I = R.getPlane(iZ, iC, iT, 'ROI',[top left, width, height]);
-    %
-    %   For large images, it can be helpful to get an image in tiles:
-    %
-    %     I = R.getTile(iZ, iC, iT, numTiles, tileIndex);
-    %
-    %   Note: getTile does not support an iS input.
-    %
-    %   where numTiles is the number of tiles to divide into [rows, cols],
-    %   and the tileIndex is the desired tile number. The tileIndex follows
-    %   MATLAB numbering convention and increases down the rows first, then
-    %   along the columns.
-    %
-    %   NOTE: This class uses the Bioformats toolbox, a standalone Java
-    %   library for reading and writing life sciences image formats
-    %   developed by the Open Microscopy Environment team
-    %   (http://http://www.openmicroscopy.org). Whenever an object is
+    %   OBJ = BIOFORMATSIMAGE(FILENAME) creates a new BioformatsImage
+    %   object to read an image file. This class uses the Bioformats
+    %   toolbox, a standalone Java library for reading and writing life
+    %   sciences image formats developed by the Open Microscopy Environment
+    %   team (http://www.openmicroscopy.org). Whenever an object is
     %   created, it will check if the toolbox exists. If it does not, it
-    %   will download and install a compatible version (currently 5.4.0) to
-    %   the MATLAB path.
-    
+    %   will download and install a compatible version to the MATLAB path.
+    %
+    %   I = getPlane(OBJ, ZPLANE, CHANNEL, TIME) will return a grayscale
+    %   image at the z-plane, channel, and time coordinates specified. To
+    %   get the number of planes, see the list of properties below.
+    %
+    %   TS = getTimestamps(OBJ, ZPLANE, CHANNEL) will return the timestamps
+    %   for all frames of the image at the specified z-plane and channel.
+    %   The timestamps can be used to compute the time between frames e.g.
+    %   by using diff(TS).
+    %
+    %   I = getFalseColor(OBJ, ZPLANE, CHANNEL, TIME) will return a false
+    %   color image using the lookup table in the file metadata. If this
+    %   information does not exist, a warning will be issued and the
+    %   grayscale image will be returned instead.
+    %
+    %   I = getPlane(OBJ, ..., 'ROI', RECT) will return a sub-image based
+    %   on the rectangular coordinates specified. RECT should be a 1x4
+    %   vector specifying [XMIN, YMIN, WIDTH, HEIGHT] values.
+    %
+    %   I = getTile(OBJ, ZPLANE, CHANNEL, TIME, NUMTILES, TILEIND) allows
+    %   large images to be read out as tiles. NUMTILES should be a 1x2
+    %   vector specifying the number of tiles [rows cols] the image should
+    %   be split into. TILEIND specifies which tile should be read out.
+    %
+    %   BioformatsImage Properties:
+    %   ---------------------------
+    %
+    %     filename - Path to image file. Note: If this value is changed,
+    %                the other properties will change to reflect the values
+    %                in the new file.
+    %     width - Width of the image in pixels (equal to number of
+    %             columns)
+    %     height - Height of the image in pixels (equal to number of rows)
+    %     series - Currently selected series (usually indicates XY points)
+    %     seriesCount - Number of series in image
+    %     sizeZ - Number of z-planes in image
+    %     sizeC - Number of channels in iamge
+    %     sizeT - Number of timepoints (frames) in image
+    %     channelNames - List of channel names
+    %     pxSize - Specifies [x, y] size of pixels in physical units
+    %     pxUnits - Units of physical pixel dimension
+    %     bitDepth - Number of bits in image
+    %     lut - Lookup table (columns are image intensity, rows are color)
+    %     swapZandT - If true, swaps the z and t values in the image
+    %
+    %  BioformatsImage Methods:
+    %  ------------------------
+    %     
+    %     getPlane - Get image from coordinates specified
+    %     getFalseColor - Get false color image using embedded lookup table
+    %     getTimestamps - Get vector of timestamps for frames specified
+    %     getTile - Split image into sub images and return a tile
+    %
+    %  Examples:
+    %
+    %  %Create a new object and display an image
+    %  bfr = BIOFORMATSIMAGE('cameraman.tif');
+    %  I = getPlane(bfr, 1, 1, 1);
+    %  imshow(I, [])
+
     properties (AbortSet)   %Filename
         filename = '';
     end
@@ -274,13 +304,28 @@ classdef BioformatsImage
         function lut = get.lut(obj)
             %Get the lookup table
             
+            %The output of get8BitLookupTable is a SIGNED integer matrix.
+            %The values below 0 have to wrapped over e.g. -128 -> -1 for the
+            %8-bit data should transform to +128 -> 255. Positive values
+            %stay as is.
             if obj.bitDepth == 8
-                lut = obj.bfReader.get8BitLookupTable;
+                lut = double(obj.bfReader.get8BitLookupTable);
+                                
+                lut(lut < 0) = lut(lut < 0) + 255;
+                lut = uint8(lut);
+                                
             elseif obj.bitDepth == 16
-                lut = obj.bfReader.get16BitLookupTable;
+                lut = double(obj.bfReader.get16BitLookupTable);
+                
+                lut(lut < 0) = lut(lut < 0) + 65535;
+                lut = uint16(lut);
+                
             end
             
             %Format of LUT is: N x bitDepth
+            
+            
+            
         end
         
         function bitDepth = get.bitDepth(obj)
@@ -297,39 +342,52 @@ classdef BioformatsImage
             
         end
         
-    end
-    
+    end    
+   
     methods %Base functions
         
-        function obj = getReader(obj)
-            %Get a Bioformats Reader object
-            %
-            % You should not need to call the function again, but I'm
-            % leaving it here in case it is necessary to reboot it.
-            
-            if ~isempty(obj.filename)
-                obj.bfReader = bfGetReader(obj.filename);
-            else
-                error('BioformatsImage:EmptyFilename',...
-                    'Set filename first.');
-            end
-            
-            %Set current series to 1
-            obj.series = 1;
-            
-        end
-        
         function [imgOut, timestamp, tsUnits] = getPlane(obj, iZ, iC, iT, varargin)
-            %Get image at specified index
+            %GETPLANE  Get image at specified plane
             %
-            %  imgOut = getImage([iZ, iC, iT])
+            %  I = GETPLANE(OBJ, ZPLANE, CHANNEL, TIME) returns a grayscale
+            %  image at the z-plane, channel, and time coordinates
+            %  specified. Note that these coordinates start at 1 for the
+            %  first plane. CHANNEL can either be a number or a string
+            %  specifying the channel name (see the 'channelNames'
+            %  property).
             %
-            %  imgOut = getImage(iZ, iC, iT, iS);
+            %  I = GETPLANE(OBJ, ..., 'ROI', RECT) will return only the
+            %  subimage specified by the rectangle RECT = [XMIN, YMIN,
+            %  WIDTH, HEIGHT]. ROI stands for 'region of interest'.
             %
-            %  imgOut = getImage(iZ, iC, iT, iS, ROI);
+            %  I = GETPLANE(OBJ, ZPLANE, CHANNEL, TIME, SERIES) will grab
+            %  an image from a different series. Note that this will change
+            %  the current series number.
             %
-            %  ROI = [XMIN YMIN WIDTH HEIGHT];
-            
+            %  [I, TS, TSUNITS] = GETPLANE(...) will also return the
+            %  timestamp TS and its units TSUNITS of the specified image
+            %  plane. Note that not all image files will have this
+            %  information - if it does not exist, a Java exception (error)
+            %  will occur.
+            %
+            %  Examples:
+            %    bfr = BioformatsImage('coloredChips.png');
+            %  
+            %    %Get the red channel (CHANNEL = 1)
+            %    R = getPlane(bfr, 1, 1, 1);
+            %    figure;
+            %    imshow(R);
+            %  
+            %    %Get the blue channel (CHANNEL = 3)
+            %    B = getPlane(bfr, 1, 3, 1);
+            %    figure;
+            %    imshow(B)
+            %
+            %    %Get a subimage showing the top left corner of the image
+            %    I = getPlane(bfr, 1, 1, 1, 'ROI', [1, 1, 100, 100]);
+            %    figure;
+            %    imshow(I)
+
             %Parse the variable input argument
             ip = inputParser;
             ip.addOptional('iSeries',NaN,@(x) isnumeric(x) && isscalar(x));
@@ -372,70 +430,18 @@ classdef BioformatsImage
             
         end
         
-        function [imgOut, timestamp, tsUnits] = getXYplane(obj, iC, iT, XYloc, varargin)
-            %GETXYPLANE  Get plane from multi-XY images
-            %
-            %  I = O.GETXYPLANE(iZ, iC, iT, XYLocation)
-            %
-            %  Currently, the code assumes that iZ = 1.
-            %
-            %  When saving multi-XY images in Nikon Jobs, there seems to be
-            %  an issue where the images are not stored in the correct
-            %  order. The image sequence then becomes interleaved:
-            %      {(XY1, T1, C1), (XY1, T1, C2), (XY2, T1, C1), (XY2, T1,
-            %      C2),...}
-            %
-            %  The series count corresponds to the number of XY locations.
-            %
-            %  To solve this issue, this function recalculates the image
-            %  index assuming this interleaved order.
-            
-            ip = inputParser;
-            ip.addParameter('ROI',[],@(x) numel(x) == 4 && all(x > 0));
-            ip.parse(varargin{:});
-            
-            %Check that reader object already exists
-            if ~bfReaderExist(obj)
-                %Get a reader for the file
-                obj = obj.getReader;
-            end
-            
-            %Resolve the channel index
-            iC = obj.channelname2ind(iC);
-            
-            %NOTE: I have not verified that calculations involving iZ is
-            %correct due to lack of data. Therefore, force this to = 1 to
-            %prevent the user from getting incorrect data.
-            iZ = 1;
-            
-            %Calculate the image index
-            imgIndex = XYloc + (iT - 1) * obj.seriesCount - 1;
-            
-            %Calculate the actual series number and timepoint
-            iS = floor(imgIndex/obj.sizeT);
-            
-            iT = imgIndex - (iS * obj.sizeT) + 1;
-            
-            %Get the image plane
-            obj.series = iS + 1;
-            
-            %Get the image
-            imgOut = obj.getPlane(iZ, iC, iT, 'ROI',ip.Results.ROI);
-            
-            %Get timestamp if output is assigned
-            if nargout > 1
-                %Get the timestamp
-                [timestamp, tsUnits] = obj.getTimestamps(iZ, iC, iT);
-            end
-        end
-        
         function [timestamps, tsunits] = getTimestamps(obj, iZ, iC, varargin)
             %GETTIMESTAMPS  Get timestamps from the specified channel
             %
-            %  [tsData, tsUnits] = O.GETTIMESTAMPS(channelIndex) returns
-            %  the timestamp information in a vector tsData. tsUnits is a
-            %  character array which contains the unit of the timestamp
-            %  data.
+            %  [TS, TSUNITS] = GETTIMESTAMPS(OBj, ZPLANE, CHANNEL) returns
+            %  the timestamp information of all frames in the image plane
+            %  specified. TS will be a vector with the timestamp of each
+            %  frame and TSUNITS will be a string containing the units of
+            %  the timestamp.
+            %
+            %  Note that not all images will contain this data. If the
+            %  image does not have timestamp information, a Java exception
+            %  (error) will occur.
             
             ip = inputParser;
             ip.addOptional('TimeRange',Inf,@(x) all(isinf(x)) || isnumeric(x));
@@ -456,8 +462,7 @@ classdef BioformatsImage
             
                 for iT = timeRange
                     %Resolve the bioformats index
-                    bfIndex = obj.getIndex(iZ,iC,iT);
-  
+                    bfIndex = obj.getIndex(iZ,iC,iT); 
                     
                     currTS = obj.metadata.getPlaneDeltaT(obj.series - 1,bfIndex - 1);
    
@@ -478,13 +483,37 @@ classdef BioformatsImage
             
         end
         
-        function [tileDataOut, roiOut] = getTile(obj, planeSpec, numTiles, tileIndex)
-            
-            %Check that the planeSpec has 3 entries for iZ, iC, iT
-            if ~(numel(planeSpec) == 3)
-                error('The plane specification should be in [iZ, iC, iT] format');
-            end
-            
+        function [tileDataOut, roiOut] = getTile(obj, iZ, iC, iT, numTiles, tileIndex)
+            %GETTILE  Split the image and return a single tile
+            %
+            %  I = GETTILE(OBJ, ZPLANE, CHANNEL, TIME, NUMTILES, TILEINDEX)
+            %  will split the image into the number of tiles specified,
+            %  returning the tile at the index specified. This function
+            %  could be useful for reading in large image files as the
+            %  whole image does not need to be loaded into memory.
+            %
+            %  NUMTILES should be a 1x2 vector specifying the [NUMROWS,
+            %  NUMCOLS] the image should be split into. TILEINDEX should be
+            %  a single number indicating the index of the tile to
+            %  retrieve. The index follows typical MATLAB convention (i.e.
+            %  down rows then columns).
+            %
+            %  [I, RECT] = GETTILE(...) also returns the rectangle
+            %  specifying the subimage returned. RECT = [MINX, MINY, WIDTH,
+            %  HEIGHT].
+            %
+            %  Example:
+            %    bfr = BioformatsImage('coloredChips.png');
+            %
+            %    %Divide the image into 2x2 tiles, displaying each in turn
+            %    numTiles = [2, 2];
+            %    for tileInd = 1:prod(numTiles)
+            %       I = getTile(bfr, 1, 1, 1, numTiles, tileInd);
+            %       imshow(I)
+            %       title('Press any key to continue.')
+            %       pause;
+            %    end
+                       
             ip = inputParser;
             ip.addRequired('NumTiles',@(x) numel(x) == 2 && all(x > 0));
             ip.addRequired('TileRange', @(x) all(x > 0));
@@ -504,12 +533,12 @@ classdef BioformatsImage
             %Create a storage for the roi
             roiOut = zeros(numel(ip.Results.TileRange),4);
             
-            for iT = 1:numel(ip.Results.TileRange)
-                tileIndex = ip.Results.TileRange(iT);
+            for iTile = 1:numel(ip.Results.TileRange)
+                tileIndex = ip.Results.TileRange(iTile);
                 roi = getTileIndices(obj, ip.Results.NumTiles, tileIndex);
                 
                 %Get the ROI
-                tileDataOut{iT} = obj.getPlane(planeSpec(1),planeSpec(2),planeSpec(3), 'ROI', roi);
+                tileDataOut{iT} = obj.getPlane(iZ, iC, iT, 'ROI', roi);
                 roiOut(iT,:) = roi;
             end
             
@@ -520,113 +549,45 @@ classdef BioformatsImage
             
         end
         
-        function imgOut = getAdjustedPlane(obj, iZ, iC, iT)
-            %Get loookup table adjusted image
-            
-            imgOut = obj.getPlane(iZ, iC, iT);
-            
-            for ii = 1:size(imgOut,3)
-                currLUT = obj.lut(ii,:);
-                imgOut(:,:,ii) = currLUT(1 + imgOut);
-            end
-            
-        end
-        
-        function rgbOut = getCompositeImage(obj, iZ, iT)
-            %GETCOMPOSITEIMAGE  Get composite colored image
+        function imgOut = getFalseColor(obj, iZ, iC, iT)
+            %GETFALSECOLOR  Get a false (pseudo) color image
             %
-            %  RGB = GETCOMPOSITEIMAGE(OBJ, Z, T) will get the image from
-            %  the z- and t-planes specified. The image will be colored
-            %  according to the lookup tables in the file.
+            %  I = GETFALSECOLOR(OBJ, ZPLANE, CHANNEL, TIME) will return a
+            %  3D matrix representing the color image. The color of the
+            %  image is determined by the lookup table (LUT) values written
+            %  into the file metadata and might not be present in every
+            %  file.
+            %
+            %  Example:
+            %    bfr = BioformatsImage('m83.tif');
+            %  
+            %    %Using getPlane will return a grayscale image
+            %    grayI = getPlane(bfr, 1, 1, 1);
+            %    imshow(grayI);
+            %
+            %    %Using getFalseColor, we can get the psuedo-colored image
+            %    fcImg = GETFALSECOLOR(bfr, 1, 1, 1);
+            %    imshow(fcImg)
+                                    
+            currFrame = obj.getPlane(iZ, iC, iT);
             
-            %TODO
+            if isempty(obj.lut)
+                warning('BioformatsImage:getFalseColor:NoLUTInfo', ...
+                    'The image does not contain lookup table information. Returning the grayscale image instead.');
+                imgOut = currFrame;
+                return;
+            end
             
+            imgOut = zeros(obj.height, obj.width, 3, sprintf('uint%.0d', obj.bitDepth));
             
+            for ii = 1:3
+                currLUT = obj.lut(ii,:);
+                imgOut(:,:,ii) = currLUT(1 + currFrame);
+            end
             
-            
+                       
         end
-        
-        function export(obj, fileOut, varargin)
-            %EXPORT  Export the ND2 image in different formats
-            
-            ip = inputParser;
-            addParameter(ip, 'format', '');
-            addParameter(ip, 'series', 1:obj.seriesCount);
-            addParameter(ip, 'channels', obj.channelNames);
-            addParameter(ip, 'frames', 1:obj.sizeT);
-            addParameter(ip, 'framerate', 5);
-            parse(ip, varargin{:});
-            
-            if isempty(ip.Results.format)
-                
-                %Try to determine the export format using the output
-                %filename extension
-                [~, ~, fExtOut] = fileparts(fileOut);
-                
-                if isempty(fExtOut)
-                    error('BioformatsImage:export:CannotDetermineOutputFormat', ...
-                        'Could not determine output format from filename. Please specify or include the desired extension.')
-                end
-                
-            else
-                
-                fExtOut = ip.Results.format;
-               
-            end
-            
-            switch lower(fExtOut)
-                
-                case {'.avi'}
-                    
-                    [dirOut, fnameOut] = fileparts(fileOut);
-                    
-                    if ~iscell(ip.Results.channels)
-                        if ischar(ip.Results.channels)
-                            channels = {ip.Results.channels};
-                        else
-                            channels = obj.channelNames(ip.Results.channels);
-                        end
-                    else
-                        channels = ip.Results.channels;                        
-                    end
-                    
-                    for iS = ip.Results.series
-                        
-                        for iC = 1:numel(channels)
-  
-                            vid = VideoWriter(fullfile(dirOut, [fnameOut, sprintf('_series%.0f_%s', iS, channels{iC}), fExtOut]));
-                            vid.FrameRate = ip.Results.framerate;
-                            open(vid)
-                            
-                            for iT = ip.Results.frames
-                                currFrame = zeros(obj.height, obj.width);
-                                currFrame(:, :) = double(getPlane(obj, 1, channels{iC}, iT));
-                                currFrame(:, :) = currFrame ./ max(currFrame(:));
-                                
-                                writeVideo(vid, currFrame)
-                            end
-                            
-                            close(vid)
-                            
-                        end
-                        
-                        
-                        
-                    end
-                    
-                case {'.tif', '.tiff'}
-                
-                case {'.png', '.jpg', '.jpeg'}
-                    
-                otherwise
-                    error('BioformatsImage:export:InvalidOutputFormat', ...
-                        'Invalid output format ''%s''. Please see ''help export'' for allowed formats.', fExtOut)
-                    
-            end
 
-            
-        end
-        
     end
     
     %--- Aux methods ---%    
@@ -676,6 +637,25 @@ classdef BioformatsImage
     end
     
     methods (Access = private)
+        
+        function obj = getReader(obj)
+            %GETREADER  Get a Bioformats Reader object
+            %
+            % OBJ = GETREADER(OBJ) initializes a reader object using the
+            % BioformatsImage java package. The object is stored in the
+            % private object bfReader property.
+            
+            if ~isempty(obj.filename)
+                obj.bfReader = bfGetReader(obj.filename);
+            else
+                error('BioformatsImage:EmptyFilename',...
+                    'Set filename first.');
+            end
+            
+            %Set current series to 1
+            obj.series = 1;
+            
+        end
         
         function installBFtbx(obj)
             %Downloads and installs the Bioformats Toolbox
