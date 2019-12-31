@@ -549,7 +549,7 @@ classdef BioformatsImage
             
         end
         
-        function imgOut = getFalseColor(obj, iZ, iC, iT)
+        function imgOut = getFalseColor(obj, iZ, iC, iT, varargin)
             %GETFALSECOLOR  Get a false (pseudo) color image
             %
             %  I = GETFALSECOLOR(OBJ, ZPLANE, CHANNEL, TIME) will return a
@@ -569,7 +569,7 @@ classdef BioformatsImage
             %    fcImg = GETFALSECOLOR(bfr, 1, 1, 1);
             %    imshow(fcImg)
                                     
-            currFrame = obj.getPlane(iZ, iC, iT);
+            currFrame = obj.getPlane(iZ, iC, iT, varargin{:});
             
             if isempty(obj.lut)
                 warning('BioformatsImage:getFalseColor:NoLUTInfo', ...
@@ -578,7 +578,7 @@ classdef BioformatsImage
                 return;
             end
             
-            imgOut = zeros(obj.height, obj.width, 3, sprintf('uint%.0d', obj.bitDepth));
+            imgOut = zeros([size(currFrame) 3], sprintf('uint%.0d', obj.bitDepth));
             
             for ii = 1:3
                 currLUT = obj.lut(ii,:);
