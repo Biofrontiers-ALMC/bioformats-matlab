@@ -124,25 +124,3 @@ classdef testBioformatsImage < matlab.unittest.TestCase
     end
     
 end
-
-%Functionality removed in v1.0.0
-%         function getZStack(TestCase)
-%             
-%             testReader = BioformatsImage(TestCase.zStackTestfile);
-%             testData = testReader.getZstack(1);
-%                         
-%             nd2r = bfGetReader(TestCase.zStackTestfile);
-%             sizeZ = nd2r.getSizeZ;
-%             expectedImgData = zeros(nd2r.getSizeY,nd2r.getSizeX,nd2r.getSizeZ,'uint16');
-%             for iZ = 1:numel(sizeZ)
-%                 expectedImgData(:,:,iZ) = bfGetPlane(nd2r,nd2r.getIndex(0, iZ - 1, 0) + 1);
-%             end
-%            
-%             TestCase.verifyEqual(size(testData), size(expectedImgData));
-%             
-%             for ii = 1:3
-%                 randPlane = round(rand(1) * sizeZ);
-%                 TestCase.verifyEqual(testData(:,:,randPlane), expectedImgData(:,:,randPlane));
-%             end
-%             
-%         end
