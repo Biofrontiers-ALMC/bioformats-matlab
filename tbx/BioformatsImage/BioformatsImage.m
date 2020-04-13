@@ -272,8 +272,19 @@ classdef BioformatsImage
         function chNames = get.channelNames(obj)
             chNames = cell(1,obj.sizeC);
             
-            for iC = 1:obj.sizeC
-                chNames{iC} = obj.metadata.getChannelName(0, iC - 1).char;
+            %Handle TIFF files
+            [~, ~, fExt] = fileparts(obj.filename);
+            switch lower(fExt)
+                
+                case {'.tif', '.tiff'}
+                    for iC = 1:obj.sizeC
+                       chNames{iC} = int2str(iC); 
+                    end
+                
+                otherwise
+                    for iC = 1:obj.sizeC
+                        chNames{iC} = obj.metadata.getChannelName(0, iC - 1).char;
+                    end
             end
         end
         
@@ -429,7 +440,7 @@ classdef BioformatsImage
             end
             
         end
-        
+                
         function [timestamps, tsunits] = getTimestamps(obj, iZ, iC, varargin)
             %GETTIMESTAMPS  Get timestamps from the specified channel
             %
@@ -447,6 +458,17 @@ classdef BioformatsImage
             ip.addOptional('TimeRange',Inf,@(x) all(isinf(x)) || isnumeric(x));
             ip.parse(varargin{:});
             
+            %Handle TIFF files
+            [~, ~, fExt] = fileparts(obj.filename);
+            switch lower(fExt)
+                
+                case {'.tif', '.tiff'}
+                    timestamps = NaN;
+                    tsunits = 'Not available';
+                    return
+                
+            end
+            
             %Resolve channel name
             iC = obj.channelname2ind(iC);
             
@@ -458,8 +480,7 @@ classdef BioformatsImage
             
             %Initialize a vector for the timestamps
             timestamps = zeros(1, numel(timeRange));
-            
-            
+                        
                 for iT = timeRange
                     %Resolve the bioformats index
                     bfIndex = obj.getIndex(iZ,iC,iT); 

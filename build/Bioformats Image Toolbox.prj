@@ -1,14 +1,14 @@
 <deployment-project plugin="plugin.toolbox" plugin-version="1.0">
-  <configuration build-checksum="1629181179" file="D:\Jian\Documents\Projects\coreCode\bioformats-image\code\build\Bioformats Image Toolbox.prj" location="D:\Jian\Documents\Projects\coreCode\bioformats-image\code\build" name="Bioformats Image Toolbox" target="target.toolbox" target-name="Package Toolbox">
-    <param.appname>Bioformats Image Toolbox (v1.1.0)</param.appname>
+  <configuration build-checksum="1629181179" file="D:\Projects\Bioformats Image Toolbox\code\build\Bioformats Image Toolbox.prj" location="D:\Projects\Bioformats Image Toolbox\code\build" name="Bioformats Image Toolbox" target="target.toolbox" target-name="Package Toolbox">
+    <param.appname>Bioformats Image Toolbox (v1.2.0)</param.appname>
     <param.authnamewatermark>Jian Wei Tay</param.authnamewatermark>
     <param.email>jian.tay@colorado.edu</param.email>
     <param.company>University of Colorado Boulder</param.company>
     <param.summary>MATLAB re-implementation of the Bioformats Image Toolbox by the OME group</param.summary>
     <param.description />
     <param.screenshot>${PROJECT_ROOT}\BioformatsImageIcon.png</param.screenshot>
-    <param.version>1.1.0</param.version>
-    <param.output>${PROJECT_ROOT}\Bioformats Image Toolbox (v1.1.0).mltbx</param.output>
+    <param.version>1.2.0</param.version>
+    <param.output>${PROJECT_ROOT}\Bioformats Image Toolbox (v1.2.0).mltbx</param.output>
     <param.products.name />
     <param.products.id />
     <param.products.version />
@@ -22,10 +22,7 @@
     <param.registered.apps />
     <param.docs />
     <param.getting.started.guide />
-    <param.matlabpath.excludes>
-      <item>/BioformatsImage/bfmatlab</item>
-      <item>/docs</item>
-    </param.matlabpath.excludes>
+    <param.matlabpath.excludes />
     <param.javaclasspath.excludes>
       <item>/BioformatsImage/bfmatlab/bioformats_package.jar</item>
     </param.javaclasspath.excludes>
@@ -64,6 +61,7 @@
       <param.registered.apps />
       <param.docs />
       <param.getting.started.guide />
+      <param.matlabpath.excludes />
       <param.exported.on.package />
       <param.required.addons />
       <param.matlab.project.id />
@@ -83,17 +81,16 @@
       <param.additional.sw.linux.url />
     </unset>
     <fileset.rootdir>
-      <file>D:\Jian\Documents\Projects\coreCode\bioformats-image\code\tbx</file>
+      <file>D:\Projects\Bioformats Image Toolbox\code\tbx</file>
     </fileset.rootdir>
     <fileset.rootfiles>
-      <file>D:\Jian\Documents\Projects\coreCode\bioformats-image\code\tbx\BioformatsImage</file>
-      <file>D:\Jian\Documents\Projects\coreCode\bioformats-image\code\tbx\docs</file>
+      <file>D:\Projects\Bioformats Image Toolbox\code\tbx\BioformatsImage</file>
     </fileset.rootfiles>
     <fileset.depfun.included />
     <fileset.depfun.excluded />
     <fileset.package />
     <build-deliverables>
-      <file location="${PROJECT_ROOT}" name="Bioformats Image Toolbox (v1.1.0).mltbx" optional="false">D:\Jian\Documents\Projects\coreCode\bioformats-image\code\build\Bioformats Image Toolbox (v1.1.0).mltbx</file>
+      <file location="${PROJECT_ROOT}" name="Bioformats Image Toolbox (v1.2.0).mltbx" optional="false">D:\Projects\Bioformats Image Toolbox\code\build\Bioformats Image Toolbox (v1.2.0).mltbx</file>
     </build-deliverables>
     <workflow />
     <matlab>
