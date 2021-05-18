@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.toolbox" plugin-version="1.0">
-  <configuration build-checksum="1629181179" file="D:\Projects\Bioformats Image Toolbox\code\build\Bioformats Image Toolbox.prj" location="D:\Projects\Bioformats Image Toolbox\code\build" name="Bioformats Image Toolbox" target="target.toolbox" target-name="Package Toolbox">
+  <configuration build-checksum="398524306" file="D:\Projects\Bioformats Image Toolbox\code\build\Bioformats Image Toolbox.prj" location="D:\Projects\Bioformats Image Toolbox\code\build" name="Bioformats Image Toolbox" target="target.toolbox" target-name="Package Toolbox">
     <param.appname>Bioformats Image Toolbox (v1.2.0)</param.appname>
     <param.authnamewatermark>Jian Wei Tay</param.authnamewatermark>
     <param.email>jian.tay@colorado.edu</param.email>
@@ -23,9 +23,7 @@
     <param.docs />
     <param.getting.started.guide />
     <param.matlabpath.excludes />
-    <param.javaclasspath.excludes>
-      <item>/BioformatsImage/bfmatlab/bioformats_package.jar</item>
-    </param.javaclasspath.excludes>
+    <param.javaclasspath.excludes />
     <param.exported.on.package>false</param.exported.on.package>
     <param.required.addons />
     <param.matlab.project.id />
@@ -62,6 +60,7 @@
       <param.docs />
       <param.getting.started.guide />
       <param.matlabpath.excludes />
+      <param.javaclasspath.excludes />
       <param.exported.on.package />
       <param.required.addons />
       <param.matlab.project.id />
