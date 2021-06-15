@@ -3,20 +3,19 @@
 Welcome to the Bioformats Image Toolbox!
 
 The Bioformats Image Toolbox provides a way to read microscope files (such as
-Nikon's ND2 format) into MATLAB. The toolbox utilizes the [Bio-Formats Image
-Package](https://www.openmicroscopy.org/bio-formats/downloads/) Java library and
-implements a MATLAB class.
+Nikon's ND2 format) into MATLAB. The toolbox implements a MATLAB class to use the [Bio-Formats Image
+Package](https://www.openmicroscopy.org/bio-formats/downloads/) Java library.
 
 ### Prerequisites
 
-  - MATLAB R2016b or newer (although it is highly likely that an earlier version
+  - MATLAB R2016b or newer (it is highly likely that an earlier version
     will work).
   
 ## Quick Navigation
 
 * [Released
-  toolboxes](https://biof-git.colorado.edu/biofrontiers-imaging/bioformats-image-toolbox/-/releases)
-* [Documentation](https://biof-git.colorado.edu/biofrontiers-imaging/bioformats-image-toolbox/wikis/home)
+  toolboxes](https://github.com/Biofrontiers-ALMC/bioformats-matlab/releases)
+* [Documentation](https://github.com/Biofrontiers-ALMC/bioformats-matlab/wiki)
 
 
 ## Thanks
