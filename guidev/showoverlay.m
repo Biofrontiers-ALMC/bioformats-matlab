@@ -13,11 +13,11 @@ function varargout = showoverlay(img, mask, varargin)
 %  Optional parameters can be supplied to the function to modify both the
 %  color and the transparency of the masks:
 %
-%     'Color' - 1x3 vector specifying the color of the overlay in 
+%     'Color' - 1x3 vector specifying the color of the overlay in
 %               normalized RGB coordinates (e.g. [0 0 1] = blue)
 %
 %     'Transparency' - Value between 0 - 100 specifying the alpha level of
-%                      the overlay                      
+%                      the overlay
 %
 %  Examples:
 %
@@ -71,37 +71,36 @@ else
 end
 
 %Process the mask
-mask = double(mask);
-mask = mask ./ max(mask(:));
+if any(mask, 'all')
+    mask = double(mask);
+    mask = mask ./ max(mask(:));
 
-if size(mask,3) == 1
-    %Convert mask into an RGB image
-    %mask = repmat(mask, 1, 1, 3);
-    
-    replacePx = mask ~= 0;
-    
-    for iC = 1:3
-        %mask(:,:,iC) = mask(:,:,iC) .* ip.Results.Color(iC);
-        
-        currC = img(:,:,iC);
-        currC(replacePx) = (currC(replacePx) .* (1 - alpha)) + (mask(replacePx) .* alpha .* ip.Results.Color(iC));
-        
-        img(:,:,iC) = currC;        
+    if size(mask,3) == 1
+        %Convert mask into an RGB image
+        %mask = repmat(mask, 1, 1, 3);
+
+        replacePx = mask ~= 0;
+        for iC = 1:3
+            %mask(:,:,iC) = mask(:,:,iC) .* ip.Results.Color(iC);
+
+            currC = img(:,:,iC);
+            currC(replacePx) = (currC(replacePx) .* (1 - alpha)) + (mask(replacePx) .* alpha .* ip.Results.Color(iC));
+
+            img(:,:,iC) = currC;
+        end
+
+
+    elseif size(mask,3) == 3
+
+        %Make the composite image
+        replacePx = mask ~= 0;
+        img(replacePx) = img(replacePx) .* (1 - alpha) + mask(replacePx) .* alpha;
+
+    else
+        error('showoverlay:InvalidMask',...
+            'Expected mask to be either a logical or RGB image.');
     end
-    
-    
-elseif size(mask,3) == 3
-    
-    %Make the composite image
-    replacePx = mask ~= 0;
-    
-    img(replacePx) = img(replacePx) .* (1 - alpha) + mask(replacePx) .* alpha;
-    
-else
-    error('showoverlay:InvalidMask',...
-        'Expected mask to be either a logical or RGB image.');
 end
-
 
 %Recast the image into the original image class
 if imageIsInteger

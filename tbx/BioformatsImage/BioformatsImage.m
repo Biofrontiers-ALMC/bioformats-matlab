@@ -103,6 +103,8 @@ classdef BioformatsImage
         cleanup
         bfReader
         metadata
+        globalMetadata
+        seriesMetadata
     end
     
     properties (Access = private)   %Bioformats toolbox download URL
@@ -267,6 +269,17 @@ classdef BioformatsImage
             
             metadata = obj.bfReader.getMetadataStore;
             
+        end
+
+        function seriesMetadata = get.seriesMetadata(obj)
+            
+            seriesMetadata = obj.bfReader.getSeriesMetadata;
+
+        end
+
+        function globalMetadata = get.globalMetadata(obj)
+
+            globalMetadata = obj.bfReader.getGlobalMetadata;
         end
         
         function chNames = get.channelNames(obj)
