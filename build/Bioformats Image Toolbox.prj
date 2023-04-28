@@ -1,14 +1,14 @@
 <deployment-project plugin="plugin.toolbox" plugin-version="1.0">
-  <configuration build-checksum="1629181179" file="D:\Projects\Bioformats Image Toolbox\code\build\Bioformats Image Toolbox.prj" location="D:\Projects\Bioformats Image Toolbox\code\build" name="Bioformats Image Toolbox" target="target.toolbox" target-name="Package Toolbox">
-    <param.appname>Bioformats Image Toolbox (v1.1.0)</param.appname>
+  <configuration build-checksum="888161297" file="D:\Projects\Toolboxes\Bioformats Image Toolbox\code\build\Bioformats Image Toolbox.prj" location="D:\Projects\Toolboxes\Bioformats Image Toolbox\code\build" name="Bioformats Image Toolbox" target="target.toolbox" target-name="Package Toolbox">
+    <param.appname>Bioformats Image Toolbox</param.appname>
     <param.authnamewatermark>Jian Wei Tay</param.authnamewatermark>
     <param.email>jian.tay@colorado.edu</param.email>
     <param.company>University of Colorado Boulder</param.company>
-    <param.summary>MATLAB re-implementation of the Bioformats Image Toolbox by the OME group</param.summary>
-    <param.description />
+    <param.summary>A MATLAB class to read ND2 files</param.summary>
+    <param.description>This toolbox contains a MATLAB class to read ND2 files. The toolboxes uses the Bioformats Library developed by the Open Microscopy Environment (OME) group.</param.description>
     <param.screenshot>${PROJECT_ROOT}\BioformatsImageIcon.png</param.screenshot>
-    <param.version>1.1.0</param.version>
-    <param.output>${PROJECT_ROOT}\Bioformats Image Toolbox (v1.1.0).mltbx</param.output>
+    <param.version>1.2.1</param.version>
+    <param.output>${PROJECT_ROOT}\Bioformats Image Toolbox.mltbx</param.output>
     <param.products.name />
     <param.products.id />
     <param.products.version />
@@ -23,9 +23,7 @@
     <param.docs />
     <param.getting.started.guide />
     <param.matlabpath.excludes />
-    <param.javaclasspath.excludes>
-      <item>/BioformatsImage/bfmatlab/bioformats_package.jar</item>
-    </param.javaclasspath.excludes>
+    <param.javaclasspath.excludes />
     <param.exported.on.package>false</param.exported.on.package>
     <param.required.addons />
     <param.matlab.project.id />
@@ -47,7 +45,6 @@
       <param.authnamewatermark />
       <param.email />
       <param.company />
-      <param.description />
       <param.output />
       <param.products.name />
       <param.products.id />
@@ -62,6 +59,7 @@
       <param.docs />
       <param.getting.started.guide />
       <param.matlabpath.excludes />
+      <param.javaclasspath.excludes />
       <param.exported.on.package />
       <param.required.addons />
       <param.matlab.project.id />
@@ -81,21 +79,34 @@
       <param.additional.sw.linux.url />
     </unset>
     <fileset.rootdir>
-      <file>D:\Projects\Bioformats Image Toolbox\code\tbx</file>
+      <file>D:\Projects\Toolboxes\Bioformats Image Toolbox\code\tbx</file>
     </fileset.rootdir>
     <fileset.rootfiles>
-      <file>D:\Projects\Bioformats Image Toolbox\code\tbx\BioformatsImage</file>
+      <file>D:\Projects\Toolboxes\Bioformats Image Toolbox\code\tbx\BioformatsImage</file>
     </fileset.rootfiles>
     <fileset.depfun.included />
     <fileset.depfun.excluded />
     <fileset.package />
     <build-deliverables>
-      <file location="${PROJECT_ROOT}" name="Bioformats Image Toolbox (v1.1.0).mltbx" optional="false">D:\Projects\Bioformats Image Toolbox\code\build\Bioformats Image Toolbox (v1.1.0).mltbx</file>
+      <file location="${PROJECT_ROOT}" name="Bioformats Image Toolbox.mltbx" optional="false">D:\Projects\Toolboxes\Bioformats Image Toolbox\code\build\Bioformats Image Toolbox.mltbx</file>
     </build-deliverables>
     <workflow />
     <matlab>
-      <root>C:\Program Files\MATLAB\R2019a</root>
-      <toolboxes />
+      <root>C:\Program Files\MATLAB\R2023a</root>
+      <toolboxes>
+        <toolbox name="matlabcoder" />
+        <toolbox name="neuralnetwork" />
+      </toolboxes>
+      <toolbox>
+        <matlabcoder>
+          <enabled>true</enabled>
+        </matlabcoder>
+      </toolbox>
+      <toolbox>
+        <neuralnetwork>
+          <enabled>true</enabled>
+        </neuralnetwork>
+      </toolbox>
     </matlab>
     <platform>
       <unix>false</unix>
