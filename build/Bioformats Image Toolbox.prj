@@ -7,7 +7,7 @@
     <param.summary>A MATLAB class to read ND2 files</param.summary>
     <param.description>This toolbox contains a MATLAB class to read ND2 files. The toolboxes uses the Bioformats Library developed by the Open Microscopy Environment (OME) group.</param.description>
     <param.screenshot>${PROJECT_ROOT}\BioformatsImageIcon.png</param.screenshot>
-    <param.version>1.2.2</param.version>
+    <param.version>1.2.3</param.version>
     <param.output>${PROJECT_ROOT}\Bioformats Image Toolbox.mltbx</param.output>
     <param.products.name />
     <param.products.id />

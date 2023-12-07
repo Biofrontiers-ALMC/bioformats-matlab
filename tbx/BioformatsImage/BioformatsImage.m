@@ -639,7 +639,9 @@ classdef BioformatsImage
                                 [outputBaseFN, outputFNsuffix, '.tif']), ...
                                 'Compression', 'none');
                         else
-
+                            imwrite(I, fullfile(outputDir, ...
+                                [outputBaseFN, outputFNsuffix, '.tif']), ...
+                                'Compression', 'none', 'writeMode', 'append');
                         end
 
                     end
