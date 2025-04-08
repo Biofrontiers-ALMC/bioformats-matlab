@@ -108,7 +108,7 @@ classdef BioformatsImage
     end
 
     properties (Access = private)   %Bioformats toolbox download URL
-        bfTbxURL = 'http://downloads.openmicroscopy.org/bio-formats/5.7.1/artifacts/bfmatlab.zip';
+        bfTbxURL = 'https://downloads.openmicroscopy.org/bio-formats/8.1.1/artifacts/bfmatlab.zip';
     end
 
     %--- Main methods ---%
