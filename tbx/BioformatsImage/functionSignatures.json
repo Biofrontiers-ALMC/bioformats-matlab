@@ -3,7 +3,7 @@
   {
      "inputs":
      [
-        {"name":"filename", "kind":"ordered", "type":[["file=*.txt"], ["char"]]}
+        {"name":"filename", "kind":"required", "type":[["file=*.nd2"], ["char"]]}
      ]
   }
-}
+}   
