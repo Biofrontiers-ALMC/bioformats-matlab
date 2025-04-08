@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.toolbox" plugin-version="1.0">
-  <configuration build-checksum="888161297" file="D:\Work\ALMC\bioformats-matlab\build\Bioformats Image Toolbox.prj" location="D:\Work\ALMC\bioformats-matlab\build" name="Bioformats Image Toolbox" target="target.toolbox" target-name="Package Toolbox">
+  <configuration build-checksum="822703113" file="D:\Work\Toolboxes\bioformats-matlab\build\Bioformats Image Toolbox.prj" location="D:\Work\Toolboxes\bioformats-matlab\build" name="Bioformats Image Toolbox" target="target.toolbox" target-name="Package Toolbox">
     <param.appname>Bioformats Image Toolbox</param.appname>
     <param.authnamewatermark>Jian Wei Tay</param.authnamewatermark>
     <param.email>jian.tay@colorado.edu</param.email>
@@ -7,7 +7,7 @@
     <param.summary>A MATLAB class to read ND2 files</param.summary>
     <param.description>This toolbox contains a MATLAB class to read ND2 files. The toolboxes uses the Bioformats Library developed by the Open Microscopy Environment (OME) group.</param.description>
     <param.screenshot>${PROJECT_ROOT}\BioformatsImageIcon.png</param.screenshot>
-    <param.version>1.2.3</param.version>
+    <param.version>1.2.4</param.version>
     <param.output>${PROJECT_ROOT}\Bioformats Image Toolbox.mltbx</param.output>
     <param.products.name />
     <param.products.id />
@@ -22,12 +22,8 @@
     <param.registered.apps />
     <param.docs />
     <param.getting.started.guide />
-    <param.matlabpath.excludes>
-      <item>/BioformatsImage/bfmatlab</item>
-    </param.matlabpath.excludes>
-    <param.javaclasspath.excludes>
-      <item>/BioformatsImage/bfmatlab/bioformats_package.jar</item>
-    </param.javaclasspath.excludes>
+    <param.matlabpath.excludes />
+    <param.javaclasspath.excludes />
     <param.exported.on.package>false</param.exported.on.package>
     <param.required.addons />
     <param.matlab.project.id />
@@ -59,6 +55,8 @@
       <param.registered.apps />
       <param.docs />
       <param.getting.started.guide />
+      <param.matlabpath.excludes />
+      <param.javaclasspath.excludes />
       <param.exported.on.package />
       <param.required.addons />
       <param.matlab.project.id />
@@ -78,27 +76,33 @@
       <param.additional.sw.linux.url />
     </unset>
     <fileset.rootdir>
-      <file>D:\Work\ALMC\bioformats-matlab\tbx</file>
+      <file>D:\Work\Toolboxes\bioformats-matlab\tbx</file>
     </fileset.rootdir>
     <fileset.rootfiles>
-      <file>D:\Work\ALMC\bioformats-matlab\tbx\BioformatsImage</file>
+      <file>D:\Work\Toolboxes\bioformats-matlab\tbx\BioformatsImage</file>
     </fileset.rootfiles>
     <fileset.depfun.included />
     <fileset.depfun.excluded />
     <fileset.package />
     <build-deliverables>
-      <file location="${PROJECT_ROOT}" name="Bioformats Image Toolbox.mltbx" optional="false">D:\Work\ALMC\bioformats-matlab\build\Bioformats Image Toolbox.mltbx</file>
+      <file location="${PROJECT_ROOT}" name="Bioformats Image Toolbox.mltbx" optional="false">D:\Work\Toolboxes\bioformats-matlab\build\Bioformats Image Toolbox.mltbx</file>
     </build-deliverables>
     <workflow />
     <matlab>
-      <root>C:\Program Files\MATLAB\R2023a</root>
+      <root>C:\Program Files\MATLAB\R2024b</root>
       <toolboxes>
         <toolbox name="matlabcoder" />
+        <toolbox name="neuralnetwork" />
       </toolboxes>
       <toolbox>
         <matlabcoder>
           <enabled>true</enabled>
         </matlabcoder>
+      </toolbox>
+      <toolbox>
+        <neuralnetwork>
+          <enabled>true</enabled>
+        </neuralnetwork>
       </toolbox>
     </matlab>
     <platform>
