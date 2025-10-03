@@ -44,10 +44,10 @@ classdef BioformatsImage
     %     series - Currently selected series (usually indicates XY points)
     %     seriesCount - Number of series in image
     %     sizeZ - Number of z-planes in image
-    %     sizeC - Number of channels in iamge
+    %     sizeC - Number of channels in image
     %     sizeT - Number of timepoints (frames) in image
     %     channelNames - List of channel names
-    %     pxSize - Specifies [x, y] size of pixels in physical units
+    %     pxSize - Specifies [x, y(, z)] size of pixels in physical units
     %     pxUnits - Units of physical pixel dimension
     %     bitDepth - Number of bits in image
     %     lut - Lookup table (columns are image intensity, rows are color)
@@ -290,6 +290,12 @@ classdef BioformatsImage
 
             pxSizeX = double(obj.metadata.getPixelsPhysicalSizeX(0).value);
             pxSizeY = double(obj.metadata.getPixelsPhysicalSizeY(0).value);
+
+            if obj.sizeZ > 1
+                pxSizeZ = double(obj.metadata.getPixelsPhysicalSizeZ(0).value);
+                pxSize = [pxSizeX, pxSizeY, pxSizeZ];
+                return;
+            end
 
             pxSize = [pxSizeX, pxSizeY];
 
